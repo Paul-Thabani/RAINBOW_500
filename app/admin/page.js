@@ -185,10 +185,11 @@ export default async function AdminPage() {
         </div>
 
         <div className="rb-admin-scroll" style={{ overflowX: "auto", border: "1px solid #24405f", borderRadius: 16, background: "#0d1a30" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, minWidth: 920 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, minWidth: 1020 }}>
             <thead>
               <tr style={{ background: "#10203a" }}>
-                <th style={th}>Buyer</th>
+                <th style={th}>Email</th>
+                <th style={th}>Phone</th>
                 <th style={th}>Zone</th>
                 <th style={th}>Cells</th>
                 <th style={th}>Amount</th>
@@ -201,10 +202,8 @@ export default async function AdminPage() {
             <tbody>
               {orders.map((o) => (
                 <tr key={o.blockId} className="rb-admin-row" style={{ borderBottom: "1px solid #1a3050" }}>
-                  <td style={td}>
-                    <div style={{ fontWeight: 700, color: "#eef1f6" }}>{o.buyerEmail || "—"}</div>
-                    <div style={{ color: "#8b8b93", fontSize: 12.5, marginTop: 2 }}>{o.buyerPhone || "—"}</div>
-                  </td>
+                  <td style={{ ...td, fontWeight: 700, color: "#eef1f6" }}>{o.buyerEmail || "—"}</td>
+                  <td style={{ ...td, color: "#cfd0d6", fontVariantNumeric: "tabular-nums" }}>{o.buyerPhone || "—"}</td>
                   <td style={{ ...td, color: "#cfd0d6" }}>{o.zoneId}</td>
                   <td style={{ ...td, fontFamily: "ui-monospace,monospace", fontSize: 12.5, color: "#cfd0d6" }}>
                     {o.cells.map((c) => `(${c.col},${c.row})`).join(", ")}
@@ -226,7 +225,7 @@ export default async function AdminPage() {
               ))}
               {orders.length === 0 && !loadError && (
                 <tr>
-                  <td colSpan={8} style={{ padding: "48px 16px", textAlign: "center", color: "#8b8b93" }}>
+                  <td colSpan={9} style={{ padding: "48px 16px", textAlign: "center", color: "#8b8b93" }}>
                     <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>No orders yet</div>
                     <div style={{ fontSize: 13 }}>Checkouts will show up here the moment someone starts one.</div>
                   </td>
