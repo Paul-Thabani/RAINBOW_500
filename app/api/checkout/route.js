@@ -42,17 +42,29 @@ export async function POST(request) {
     return Response.json({ error: e.message }, { status: 500 });
   }
 
-  // Re-check availability server-side against confirmed (paid) squares only
-  // - the client's view of "reserved" can be stale.
-  const { data: paidRows, error: fetchErr } = await supabase
+  // Lazy cleanup (no cron needed): a pending row nobody ever paid for
+  // shouldn't lock its cell forever, so expire anything past a reasonable
+  // checkout window before checking availability.
+  await supabase
+    .from("squares")
+    .update({ status: "cancelled" })
+    .eq("status", "pending")
+    .lt("created_at", new Date(Date.now() - 20 * 60 * 1000).toISOString());
+
+  // Re-check availability server-side against paid AND still-pending squares
+  // - the client's view of "reserved" can be stale, and checking pending
+  // too closes the window where two people could both pass this check for
+  // the same cell before either finished paying (the unique index below is
+  // the real, atomic guarantee - this is just a friendlier first check).
+  const { data: liveRows, error: fetchErr } = await supabase
     .from("squares")
     .select("col,row,span")
     .eq("zone_id", zoneId)
-    .eq("status", "paid");
+    .in("status", ["paid", "pending"]);
   if (fetchErr) return Response.json({ error: fetchErr.message }, { status: 500 });
 
   const occ = new Set();
-  (paidRows || []).forEach((r) => {
+  (liveRows || []).forEach((r) => {
     const sp = r.span || 1;
     for (let i = 0; i < sp; i++)
       for (let j = 0; j < sp; j++) occ.add(cellKey(zoneId, r.col + i, r.row + j));
@@ -88,7 +100,14 @@ export async function POST(request) {
   }));
 
   const { error: insertErr } = await supabase.from("squares").insert(rows);
-  if (insertErr) return Response.json({ error: insertErr.message }, { status: 500 });
+  if (insertErr) {
+    // Unique-index violation = someone else's checkout claimed this exact
+    // cell in the split second between the check above and this insert.
+    if (insertErr.code === "23505") {
+      return Response.json({ error: "That spot's just been taken, try another" }, { status: 409 });
+    }
+    return Response.json({ error: insertErr.message }, { status: 500 });
+  }
 
   let fields;
   try {
