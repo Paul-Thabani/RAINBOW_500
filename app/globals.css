@@ -1,0 +1,53 @@
+@import url("https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,600;0,700;0,900;1,600;1,800&family=Permanent+Marker&display=swap");
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #0a1526;
+  color: #eef1f6;
+  font-family: "Archivo", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: #cfd0d6;
+  text-decoration: none;
+}
+a:hover {
+  color: #ffffff;
+}
+
+::selection {
+  background: #a855f7;
+  color: #fff;
+}
+
+h1,
+h2 {
+  text-wrap: balance;
+}
+
+@keyframes floatIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 14px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
