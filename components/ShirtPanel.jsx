@@ -37,8 +37,8 @@ function OpenCellMarkers({ zone, entries }) {
               width: "100%",
               height: "100%",
               borderRadius: 2,
-              border: "1px dashed rgba(255,255,255,.55)",
-              background: "rgba(255,255,255,.07)",
+              border: "1px dashed rgba(0,0,0,.6)",
+              background: "rgba(0,0,0,.08)",
             }}
           />
         </div>

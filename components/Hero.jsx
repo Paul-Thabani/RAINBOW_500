@@ -1,7 +1,11 @@
+import { fmt } from "../lib/useRainbow500";
+
 const RAINBOW_GRADIENT =
   "linear-gradient(90deg,#e11d48,#f97316,#eab308,#16a34a,#0ea5e9,#6366f1,#a855f7)";
 
-export default function Hero({ onJoin, onGoTracker, goalLabel, claimed }) {
+export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
+  const left = total - claimed;
+
   return (
     <section
       style={{
@@ -39,17 +43,16 @@ export default function Hero({ onJoin, onGoTracker, goalLabel, claimed }) {
             textTransform: "uppercase",
           }}
         >
-          The Goal
+          Rainbow
           <br />
-          Is Love
+          500
         </h1>
         <p style={{ fontSize: 18, lineHeight: 1.6, color: "#b9bac2", maxWidth: 500, margin: "0 0 30px" }}>
-          A community club chasing professional football with a brilliant young local team. This season,
-          we&apos;re flipping the script: one shirt, split into <strong style={{ color: "#fff" }}>500 squares</strong>,
-          to raise <strong style={{ color: "#fff" }}>R1,000,000  </strong>  for the players who carry our community&apos;s
-          hopes.
+          One shirt, split into <strong style={{ color: "#fff" }}>{total} squares</strong>. Claim a square
+          from <strong style={{ color: "#fff" }}>R{fmt(price)}</strong>, put your name, logo or doodle on the
+          kit - and get the shirt free.
         </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 34 }}>
+        <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 16, marginBottom: 22 }}>
           <button
             type="button"
             onClick={onJoin}
@@ -65,25 +68,31 @@ export default function Hero({ onJoin, onGoTracker, goalLabel, claimed }) {
               border: "none",
             }}
           >
-            Join the Rainbow 500
+            Claim your square - R{fmt(price)}
           </button>
-          <button
-            type="button"
-            onClick={onGoTracker}
+          <span style={{ color: "#8b8b93", fontWeight: 700, fontSize: 15 }}>{left} squares left</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 34 }}>
+          <div
             style={{
-              cursor: "pointer",
-              fontFamily: "inherit",
-              fontWeight: 800,
+              flexShrink: 0,
+              width: 34,
+              height: 34,
+              borderRadius: 10,
+              background: RAINBOW_GRADIENT,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
               fontSize: 16,
-              color: "#fff",
-              background: "transparent",
-              border: "1.5px solid #35353d",
-              padding: "15px 26px",
-              borderRadius: 999,
+              color: "#12151c",
             }}
           >
-            See the fill tracker
-          </button>
+            ★
+          </div>
+          <div style={{ fontSize: 15, lineHeight: 1.5, color: "#b9bac2", maxWidth: 460 }}>
+            <strong style={{ color: "#fff" }}>Every square includes a free shirt.</strong> Once your purchase
+            is confirmed we&apos;ll email you a short form to capture your size.
+          </div>
         </div>
         <div style={{ display: "flex", gap: 40, flexWrap: "wrap" }}>
           <div>
@@ -138,7 +147,7 @@ export default function Hero({ onJoin, onGoTracker, goalLabel, claimed }) {
           }}
         >
           <img
-            src="/assets/kit-finished-front.png?v=10"
+            src="/assets/top-shirt.png?v=3"
             alt="HBUFC The Goal is Love kit, front (the finished vision)"
             style={{ display: "block", width: "94%", height: "auto", margin: "0 auto" }}
           />

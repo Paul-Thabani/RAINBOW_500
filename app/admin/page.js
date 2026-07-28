@@ -41,7 +41,7 @@ function groupByBlock(rows) {
         cells: [],
       });
     }
-    map.get(r.block_id).cells.push({ col: r.col, row: r.row });
+    map.get(r.block_id).cells.push({ col: r.col, row: r.row, content: r.content });
   });
   return [...map.values()].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
@@ -67,6 +67,40 @@ function Stat({ label, value, color, accent }) {
       </div>
     </div>
   );
+}
+
+function ContentPreview({ content }) {
+  if (!content) return <span style={{ color: "#4b5563" }}>—</span>;
+  if (content.type === "image") {
+    return (
+      <img
+        src={content.src}
+        alt="Logo"
+        title="Logo"
+        style={{ width: 32, height: 32, objectFit: "contain", background: "#fff", borderRadius: 6, border: "1px solid #24405f" }}
+      />
+    );
+  }
+  if (content.type === "text") {
+    return (
+      <span
+        title={content.text}
+        style={{
+          display: "inline-block",
+          maxWidth: 110,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          fontSize: 12,
+          fontStyle: "italic",
+          color: "#cfd0d6",
+        }}
+      >
+        &quot;{content.text}&quot;
+      </span>
+    );
+  }
+  return <span style={{ color: "#4b5563" }}>—</span>;
 }
 
 function StatusPill({ status }) {
@@ -225,13 +259,14 @@ export default async function AdminPage() {
         )}
 
         <div className="rb-admin-scroll" style={{ overflowX: "auto", border: "1px solid #24405f", borderRadius: 16, background: "#0d1a30" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, minWidth: 1020 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, minWidth: 1160 }}>
             <thead>
               <tr style={{ background: "#10203a" }}>
                 <th style={th}>Email</th>
                 <th style={th}>Phone</th>
                 <th style={th}>Zone</th>
                 <th style={th}>Cells</th>
+                <th style={th}>Logo / message</th>
                 <th style={th}>Amount</th>
                 <th style={th}>Status</th>
                 <th style={th}>Created</th>
@@ -247,6 +282,13 @@ export default async function AdminPage() {
                   <td style={{ ...td, color: "#cfd0d6" }}>{o.zoneId}</td>
                   <td style={{ ...td, fontFamily: "ui-monospace,monospace", fontSize: 12.5, color: "#cfd0d6" }}>
                     {o.cells.map((c) => `(${c.col},${c.row})`).join(", ")}
+                  </td>
+                  <td style={td}>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", maxWidth: 220 }}>
+                      {o.cells.map((c, i) => (
+                        <ContentPreview key={i} content={c.content} />
+                      ))}
+                    </div>
                   </td>
                   <td style={{ ...td, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>R{fmt(o.amount)}</td>
                   <td style={td}>
@@ -265,7 +307,7 @@ export default async function AdminPage() {
               ))}
               {orders.length === 0 && !loadError && (
                 <tr>
-                  <td colSpan={9} style={{ padding: "48px 16px", textAlign: "center", color: "#8b8b93" }}>
+                  <td colSpan={10} style={{ padding: "48px 16px", textAlign: "center", color: "#8b8b93" }}>
                     <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>No orders yet</div>
                     <div style={{ fontSize: 13 }}>Checkouts will show up here the moment someone starts one.</div>
                   </td>

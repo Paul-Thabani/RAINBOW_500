@@ -5,7 +5,7 @@ const RAINBOW_GRADIENT =
 
 export default function HowItWorks({ price, blockPrice }) {
   const steps = [
-    { n: "1", color: "#e11d48", t: "Switch to Customise", d: "Open the shirt and turn on customise mode." },
+    { n: "1", color: "#e11d48", t: "Open the shirt", d: "Scroll to the shirt and find an open square or block." },
     { n: "2", color: "#16a34a", t: "Pick a square or block", d: `One square is R${fmt(price)}, a block of four is R${fmt(blockPrice)}.` },
     { n: "3", color: "#0ea5e9", t: "Add your collateral", d: "Logo, message or doodle, or one big piece across the block." },
     { n: "4", color: "#a855f7", t: "Secure & renew", d: "Light up the live tracker: your square is yours for life." },

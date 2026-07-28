@@ -46,6 +46,14 @@ export async function POST(request) {
   if (!Array.isArray(slots) || !slots.some(Boolean)) {
     return Response.json({ error: "Add a logo, message or doodle first" }, { status: 400 });
   }
+  // The browser resizes/re-encodes logos before upload, so this should never
+  // trip in normal use - it's a backstop against a client that skips that
+  // step, since `content` is stored as-is in Postgres and re-sent in full to
+  // every visitor polling GET /api/squares for as long as the square is paid.
+  const MAX_CONTENT_LENGTH = 2_000_000; // data URL length, ~2MB
+  if (slots.some((s) => s && s.type === "image" && typeof s.src === "string" && s.src.length > MAX_CONTENT_LENGTH)) {
+    return Response.json({ error: "That image is too large, please use a smaller file" }, { status: 400 });
+  }
   const buyerEmail = typeof email === "string" ? email.trim() : "";
   const buyerPhone = typeof phone === "string" ? phone.trim() : "";
   if (!/^\S+@\S+\.\S+$/.test(buyerEmail)) {

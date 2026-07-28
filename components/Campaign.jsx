@@ -38,7 +38,26 @@ export default function Campaign() {
     <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 22px" }}>
       <Header onJoin={r.setCustomise} />
 
-      <Hero onJoin={r.setCustomise} onGoTracker={r.goTracker} goalLabel={goalLabel} claimed={reservations.claimed} />
+      <Hero
+        onJoin={r.setCustomise}
+        goalLabel={goalLabel}
+        claimed={reservations.claimed}
+        total={r.total}
+        price={r.price}
+      />
+
+      <KitSection
+        spotSize={r.spotSize}
+        setSize1={r.setSize1}
+        setSize4={r.setSize4}
+        price={r.price}
+        blockPrice={r.blockPrice}
+        reserved={reservations.reserved}
+        hover={r.hover}
+        onHover={r.onHover}
+        onLeave={r.onLeave}
+        onPick={r.onPick}
+      />
 
       <Belief />
 
@@ -51,26 +70,9 @@ export default function Campaign() {
         total={r.total}
         raised={reservations.raised}
         price={r.price}
-        reserved={reservations.reserved}
       />
 
       <HowItWorks price={r.price} blockPrice={r.blockPrice} />
-
-      <KitSection
-        mode={r.mode}
-        setPreview={r.setPreview}
-        setCustomise={r.setCustomise}
-        spotSize={r.spotSize}
-        setSize1={r.setSize1}
-        setSize4={r.setSize4}
-        price={r.price}
-        blockPrice={r.blockPrice}
-        reserved={reservations.reserved}
-        hover={r.hover}
-        onHover={r.onHover}
-        onLeave={r.onLeave}
-        onPick={r.onPick}
-      />
 
       <Pricing price={r.price} blockPrice={r.blockPrice} />
 
