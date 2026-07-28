@@ -4,3 +4,12 @@ out
 .env*.local
 npm-debug.log*
 .DS_Store
+
+# Local Claude Code working notes, deliberately untracked
+CLAUDE.md
+
+# Editor swap files. These matter here because a swap file of .env.local holds
+# the same secrets as .env.local, and this repo is public.
+*.swp
+*.swo
+*~
