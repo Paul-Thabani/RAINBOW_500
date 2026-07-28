@@ -27,6 +27,19 @@
 --     where status = 'paid'
 --        or (status = 'pending' and created_at > now() - interval '20 minutes');
 --   grant select on public.claimed_squares to anon, authenticated;
+--
+-- Third migration (lets a late payment still be confirmed): the checkout
+-- sweep now marks an outlived pending row `expired` rather than `cancelled`,
+-- because the buyer can still pay after the sweep has run and the notify
+-- callback has to be allowed to honour that. Run this too if the table
+-- already exists:
+--   alter table public.squares drop constraint squares_status_check;
+--   alter table public.squares add constraint squares_status_check
+--     check (status in ('pending','paid','failed','cancelled','expired','conflict'));
+-- Any rows the old sweep already set to `cancelled` were auto-expirations,
+-- so if you have some from testing and want them resolvable again:
+--   update public.squares set status = 'expired'
+--     where status = 'cancelled' and paid_at is null;
 
 create table public.squares (
   id uuid primary key default gen_random_uuid(),
@@ -42,8 +55,11 @@ create table public.squares (
   order_amount numeric not null,
   buyer_email text not null,
   buyer_phone text not null,
+  -- `expired` is an auto-expiration of an abandoned checkout and is still
+  -- resolvable by a late notify; `cancelled` is terminal. Keeping them apart
+  -- is what stops a slow payment being taken without confirming the square.
   status text not null default 'pending'
-    check (status in ('pending', 'paid', 'failed', 'cancelled', 'conflict')),
+    check (status in ('pending', 'paid', 'failed', 'cancelled', 'expired', 'conflict')),
   pf_payment_id text, -- the gateway's own transaction/trace id (e.g. Netcash's RequestTrace)
   created_at timestamptz not null default now(),
   paid_at timestamptz

@@ -45,9 +45,16 @@ export async function POST(request) {
   // Lazy cleanup (no cron needed): a pending row nobody ever paid for
   // shouldn't lock its cell forever, so expire anything past a reasonable
   // checkout window before checking availability.
+  //
+  // This sets `expired`, NOT `cancelled`, and the difference matters: the
+  // buyer may still be sitting on Netcash's payment page and pay after this
+  // sweep has run. Netcash, not this sweep, is the authority on whether
+  // money actually moved, so `expired` is a status the notify callback is
+  // still allowed to resolve into `paid` (see app/api/netcash/notify).
+  // `cancelled` stays reserved for genuinely terminal orders.
   await supabase
     .from("squares")
-    .update({ status: "cancelled" })
+    .update({ status: "expired" })
     .eq("status", "pending")
     .lt("created_at", new Date(Date.now() - 20 * 60 * 1000).toISOString());
 

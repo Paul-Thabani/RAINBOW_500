@@ -13,6 +13,7 @@ const STATUS_STYLE = {
   pending: { color: "#ffd27a", bg: "rgba(255,210,122,.12)" },
   failed: { color: "#fca5a5", bg: "rgba(252,165,165,.12)" },
   cancelled: { color: "#9aa1ac", bg: "rgba(154,161,172,.12)" },
+  expired: { color: "#c4b5fd", bg: "rgba(196,181,253,.12)" },
   conflict: { color: "#fdba74", bg: "rgba(253,186,116,.12)" },
 };
 
