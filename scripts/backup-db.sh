@@ -67,10 +67,12 @@ log "ok: $OUT ($SIZE bytes, $ROWS square rows)"
 find "$BACKUP_DIR" -name 'rainbow500-*.dump' -type f -mtime "+$KEEP_DAYS" -delete
 
 # --- Offsite ----------------------------------------------------------------
-# STILL TO DO. Everything above keeps the backup on the same disk as the
-# database, which protects against a bad deploy or a dropped table but not
-# against losing the machine. Pick a destination and add it here, for example:
-#   rclone copy "$OUT" remote:hbufc-backups/rainbow500/
-#   aws s3 cp "$OUT" s3://hbufc-backups/rainbow500/
-# Until that line exists, this is a single-disk backup and should be described
-# as one.
+# Handled separately, not from this script, because the rclone `gdrive` remote
+# is configured for root while this runs as harrison from cron:
+#
+#   /usr/local/sbin/rainbow500-drive-backup.sh
+#   rainbow500-drive-backup.timer   daily at 03:50, after this script's 03:17
+#   destination                     gdrive:Rainbow500Backups, 30 day retention
+#
+# That mirrors the existing sonar-drive-backup pattern on this box. Verified by
+# uploading a dump, pulling it back down, and confirming pg_restore parses it.
