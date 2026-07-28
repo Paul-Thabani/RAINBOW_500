@@ -6,20 +6,26 @@ flow (pick a square or 2x2 block on the shirt, front/back and both sleeves,
 add a logo/message/doodle, review with a hover-zoom lens, then pay for it via
 Netcash Pay Now). A square is taken off the board as soon as someone starts
 checking out for it, and only renders their artwork once the payment is
-confirmed - that state lives in Supabase, shared by every visitor, not just
+confirmed - that state lives in PostgreSQL, shared by every visitor, not just
 the browser that picked it.
 
 ## Setup
 
 1. Install Node.js 20+ if you haven't already (via [nodejs.org](https://nodejs.org)
    or `brew install node`).
-2. Create a free project at [supabase.com](https://supabase.com), then in its
-   SQL editor run `supabase/schema.sql` from this repo. (Logos/doodles are
-   stored directly in that table as base64 - no separate Storage bucket
-   needed.)
-3. Copy `.env.local.example` to `.env.local` and fill in your Supabase
-   Project URL, anon key, and service_role key (Settings → API in the
-   Supabase dashboard).
+2. Install PostgreSQL 14+ and create the role and database:
+   ```
+   sudo -u postgres psql
+   create role rainbow500 with login password 'something-long-and-random';
+   create database rainbow500 owner rainbow500;
+   ```
+3. Copy `.env.local.example` to `.env.local`, put that connection string in
+   `DATABASE_URL`, then apply the schema:
+   ```
+   psql "$DATABASE_URL" -f db/schema.sql
+   ```
+   Logos and doodles are stored directly in the table as base64, so there is no
+   object storage to configure.
 4. Set up Netcash (see below), then put your Pay Now Service Key into
    `NETCASH_SERVICE_KEY` in `.env.local`.
 5. Set `ADMIN_USER` and `ADMIN_PASSWORD` in `.env.local`. These guard `/admin`
@@ -33,18 +39,31 @@ the browser that picked it.
    ```
 7. Open [http://localhost:3000](http://localhost:3000).
 
-Note that `supabase/schema.sql` carries migration notes at the top for columns
-and constraints added after the initial setup. On an existing database run
-those instead of the `create table` block, and run all of them: the third one
-adds the `expired` status, and without it the checkout route's cleanup sweep
-fails.
+`db/schema.sql` is idempotent, so re-running it against an existing database is
+safe. There is no migration tool: schema changes are applied by hand.
+
+## Security model
+
+The database listens on localhost and nothing outside the machine can reach it.
+That is the whole boundary, which is why there are no table policies to get
+right:
+
+- The browser never talks to the database. The shirt reads through
+  `GET /api/squares`, which selects from the `claimed_squares` view.
+- That view is deliberately narrow. It has no `buyer_email` and no
+  `buyer_phone`, so the public read endpoint cannot leak contact details even
+  if someone later changes it to select everything.
+- The view also withholds `content` until a row is `paid`, so artwork from a
+  checkout nobody ever paid for is never published. In-progress squares render
+  as a plain taken block.
+- Every write goes through an API route. Nothing accepts a client-supplied
+  status, amount or reference.
 
 ## Orders dashboard
 
 `/admin` lists every checkout attempt, confirmed or not, newest first, grouped
-so a block of 4 reads as one order. It renders server-side with the
-service-role key, so it needs no Supabase policy changes and nothing about it
-is reachable from the public anon key.
+so a block of 4 reads as one order. It renders server-side, straight from the
+database, so nothing about it is reachable from the browser.
 
 It is gated by `middleware.js` using HTTP Basic Auth against `ADMIN_USER` and
 `ADMIN_PASSWORD`. If either is unset the route returns 500 rather than opening
@@ -114,22 +133,23 @@ before relying on this for real transactions.
   `paid`.
 - `app/admin/page.js` + `middleware.js`: the orders dashboard and the Basic
   Auth gate in front of it (see "Orders dashboard" above).
+- `app/api/squares/route.js`: the shirt's read endpoint. The browser polls this
+  because it cannot reach the database directly.
 - `components/Campaign.jsx`: top-level client component; wires
   `useRainbow500` (editor/UI state) and `useReservations` (the
-  Supabase-backed claimed-squares data + checkout) together.
+  server-backed claimed-squares data + checkout) together.
 - `lib/zones.js`: pure grid/zone definitions and placement math - no "use
   client" directive, so it's safe to import from both the UI hook and the
   server-side API routes.
 - `lib/useRainbow500.js`: the editor/UI state hook (which square is open,
   the doodle canvas, tabs, etc); re-exports everything from `lib/zones.js`.
-- `lib/useReservations.js`: fetches/polls claimed squares (paid, plus
-  still-fresh in-progress checkouts) from Supabase and exposes `checkout()`.
+- `lib/useReservations.js`: polls `/api/squares` for claimed squares (paid, plus
+  still-fresh in-progress checkouts) and exposes `checkout()`.
 - `lib/netcash.js`: Netcash Pay Now field building and Notify parsing.
-- `lib/supabaseClient.js` / `lib/supabaseAdmin.js`: browser (anon key) and
-  server-only (service-role key) Supabase clients.
-- `supabase/schema.sql`: the `squares` table + the `claimed_squares` public
-  view + the unique index that stops two buyers claiming one cell - run once
-  in the Supabase SQL editor, and mind the migration notes at the top.
+- `lib/db.js`: the pooled Postgres client. Server-only, never import it from a
+  Client Component.
+- `db/schema.sql`: the `squares` table, the `claimed_squares` view, and the
+  unique index that stops two buyers claiming one cell.
 - `components/ShirtPanel.jsx`: the interactive/reviewable shirt grid overlay,
   shared by the kit section and the editor's review step.
 - `components/EditorModal.jsx`: the "make it yours" modal (block mode,

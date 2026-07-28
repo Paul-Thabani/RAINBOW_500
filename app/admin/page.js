@@ -1,5 +1,10 @@
-import { getSupabaseAdmin } from "../../lib/supabaseAdmin";
+import { query } from "../../lib/db";
 import { fmt } from "../../lib/zones";
+
+// Most recent orders to render. Abandoned checkouts accumulate a row each, so
+// this will eventually bite; the page says so explicitly rather than quietly
+// showing a subset.
+const ORDER_LIMIT = 1000;
 
 // Always hits the database fresh - this page shows live order/payment
 // status, so it must never be statically cached.
@@ -103,18 +108,35 @@ const td = { padding: "13px 16px", verticalAlign: "top" };
 
 export default async function AdminPage() {
   let orders = [];
+  let totalOrders = 0;
   let loadError = "";
 
   try {
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("squares")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(2000);
-    if (error) throw error;
-    orders = groupByBlock(data || []);
+    // Limit by order, not by row: a block of 4 is four rows, so a plain row
+    // limit would cut a block in half and show a partial order.
+    const [{ rows: orderRows }, { rows: countRows }] = await Promise.all([
+      query(
+        `with recent as (
+           select block_id, max(created_at) as ordered_at
+             from squares
+            group by block_id
+            order by max(created_at) desc
+            limit $1
+         )
+         select s.*
+           from squares s
+           join recent r on r.block_id = s.block_id
+          order by r.ordered_at desc`,
+        [ORDER_LIMIT]
+      ),
+      query(`select count(distinct block_id)::int as total from squares`),
+    ]);
+    orders = groupByBlock(orderRows);
+    totalOrders = countRows[0]?.total ?? orders.length;
   } catch (e) {
+    // This page is behind Basic Auth, so the real error is more use here than
+    // a generic one.
+    console.error("/admin:", e.message);
     loadError = e.message;
   }
 
@@ -184,6 +206,23 @@ export default async function AdminPage() {
           {conflictCount > 0 && <Stat label="Conflicts" value={conflictCount} color="#fdba74" accent="#f97316" />}
           <Stat label="Raised" value={"R" + fmt(totalRaised)} color="#a5c8ff" accent="#0ea5e9" />
         </div>
+
+        {totalOrders > orders.length && (
+          <div
+            style={{
+              background: "rgba(255,210,122,.08)",
+              border: "1px solid #6b5320",
+              borderRadius: 12,
+              padding: "12px 16px",
+              marginBottom: 20,
+              color: "#ffd27a",
+              fontSize: 13.5,
+            }}
+          >
+            Showing the {orders.length} most recent of {totalOrders} orders. The
+            stats above count only what is shown.
+          </div>
+        )}
 
         <div className="rb-admin-scroll" style={{ overflowX: "auto", border: "1px solid #24405f", borderRadius: 16, background: "#0d1a30" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, minWidth: 1020 }}>

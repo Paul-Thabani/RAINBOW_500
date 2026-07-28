@@ -1,4 +1,4 @@
-import { getSupabaseAdmin } from "../../../../lib/supabaseAdmin";
+import { query } from "../../../../lib/db";
 import { parseNotifyFields } from "../../../../lib/netcash";
 import { cellKey } from "../../../../lib/zones";
 
@@ -34,116 +34,135 @@ function cellsOf(row) {
   return out;
 }
 
+// Settle every row of this order, but only if it is still resolvable. Doing the
+// status guard in the WHERE clause rather than in JS is what makes
+// first-notify-wins hold: two concurrent notifies cannot both match.
+async function settle(reference, status, requestTrace) {
+  const sql =
+    status === "paid"
+      ? `update squares
+            set status = 'paid', paid_at = now(), pf_payment_id = $3
+          where m_payment_id = $1
+            and status = any($2::text[])`
+      : `update squares
+            set status = $3
+          where m_payment_id = $1
+            and status = any($2::text[])`;
+  const params = status === "paid" ? [reference, RESOLVABLE, requestTrace] : [reference, RESOLVABLE, status];
+  const { rowCount } = await query(sql, params);
+  return rowCount;
+}
+
 export async function POST(request) {
   const formData = await request.formData();
   const fields = parseNotifyFields(formData);
 
   if (!fields.reference) return new Response("missing reference", { status: 400 });
 
-  let supabase;
   try {
-    supabase = getSupabaseAdmin();
-  } catch (e) {
-    console.error("Netcash notify:", e.message);
-    return new Response("server not configured", { status: 500 });
-  }
-
-  const { data: rows, error: fetchErr } = await supabase
-    .from("squares")
-    .select("id,zone_id,col,row,span,order_amount,status")
-    .eq("m_payment_id", fields.reference);
-  if (fetchErr) return new Response(fetchErr.message, { status: 500 });
-  if (!rows || rows.length === 0) {
-    console.warn("Netcash notify: no squares found for reference", fields.reference);
-    return new Response("OK", { status: 200 }); // acknowledge - nothing to do
-  }
-
-  if (!RESOLVABLE.includes(rows[0].status)) {
-    return new Response("OK", { status: 200 });
-  }
-
-  const wasExpired = rows[0].status === "expired";
-
-  const expected = Number(rows[0].order_amount);
-  const amountOk = Math.abs(fields.amount - expected) < 0.01;
-
-  if (!fields.accepted || !amountOk) {
-    if (!amountOk) console.error("Netcash notify: amount mismatch for", fields.reference, fields.amount, "vs", expected);
-    await supabase
-      .from("squares")
-      .update({ status: "failed" })
-      .eq("m_payment_id", fields.reference)
-      .in("status", RESOLVABLE);
-    return new Response("OK", { status: 200 });
-  }
-
-  // Defensive check: make sure nothing else has taken these cells while this
-  // order was in flight - flag for manual review instead of overwriting. This
-  // matters more for a revived `expired` order, whose cells were free for
-  // anyone else to claim in the meantime.
-  const zoneIds = [...new Set(rows.map((r) => r.zone_id))];
-  const { data: liveRows, error: liveErr } = await supabase
-    .from("squares")
-    .select("zone_id,col,row,span")
-    .in("zone_id", zoneIds)
-    .in("status", ["paid", "pending"])
-    .neq("m_payment_id", fields.reference);
-  if (liveErr) return new Response(liveErr.message, { status: 500 });
-
-  const taken = new Set((liveRows || []).flatMap(cellsOf));
-  const hasConflict = rows.flatMap(cellsOf).some((c) => taken.has(c));
-
-  if (hasConflict) {
-    console.error(
-      "Netcash notify: cell conflict for",
-      fields.reference,
-      "- payment was accepted but the cells are taken, needs a manual refund"
+    const { rows } = await query(
+      `select id, zone_id, col, "row", span, order_amount, status
+         from squares
+        where m_payment_id = $1`,
+      [fields.reference]
     );
-    await supabase
-      .from("squares")
-      .update({ status: "conflict" })
-      .eq("m_payment_id", fields.reference)
-      .in("status", RESOLVABLE);
+
+    if (rows.length === 0) {
+      console.warn("Netcash notify: no squares found for reference", fields.reference);
+      return new Response("OK", { status: 200 }); // acknowledge - nothing to do
+    }
+
+    if (!RESOLVABLE.includes(rows[0].status)) {
+      return new Response("OK", { status: 200 });
+    }
+
+    const wasExpired = rows[0].status === "expired";
+
+    // `numeric` arrives from pg as a string, so coerce before comparing.
+    const expected = Number(rows[0].order_amount);
+    const amountOk = Math.abs(fields.amount - expected) < 0.01;
+
+    if (!fields.accepted || !amountOk) {
+      if (!amountOk) {
+        console.error(
+          "Netcash notify: amount mismatch for",
+          fields.reference,
+          fields.amount,
+          "vs",
+          expected
+        );
+      }
+      await settle(fields.reference, "failed");
+      return new Response("OK", { status: 200 });
+    }
+
+    // Defensive check: make sure nothing else has taken these cells while this
+    // order was in flight - flag for manual review instead of overwriting. This
+    // matters more for a revived `expired` order, whose cells were free for
+    // anyone else to claim in the meantime.
+    const zoneIds = [...new Set(rows.map((r) => r.zone_id))];
+    const { rows: liveRows } = await query(
+      `select zone_id, col, "row", span
+         from squares
+        where zone_id = any($1::text[])
+          and status in ('paid', 'pending')
+          and m_payment_id <> $2`,
+      [zoneIds, fields.reference]
+    );
+
+    const taken = new Set(liveRows.flatMap(cellsOf));
+    const hasConflict = rows.flatMap(cellsOf).some((c) => taken.has(c));
+
+    if (hasConflict) {
+      console.error(
+        "Netcash notify: cell conflict for",
+        fields.reference,
+        "- payment was accepted but the cells are taken, needs a manual refund"
+      );
+      await settle(fields.reference, "conflict");
+      return new Response("OK", { status: 200 });
+    }
+
+    const updated = await settle(fields.reference, "paid", fields.requestTrace);
+
+    if (updated === 0) {
+      // Another notify for this same reference resolved it between our read and
+      // our write. It won, and it applied the same guards, so there is nothing
+      // to do and nothing wrong.
+      console.warn("Netcash notify:", fields.reference, "was already settled concurrently");
+      return new Response("OK", { status: 200 });
+    }
+
+    if (wasExpired) {
+      console.warn(
+        "Netcash notify: revived expired order",
+        fields.reference,
+        "- buyer paid after the checkout window had passed, square confirmed"
+      );
+    }
+
     return new Response("OK", { status: 200 });
-  }
-
-  const { error: payErr } = await supabase
-    .from("squares")
-    .update({ status: "paid", paid_at: new Date().toISOString(), pf_payment_id: fields.requestTrace })
-    .eq("m_payment_id", fields.reference)
-    .in("status", RESOLVABLE);
-
-  if (payErr) {
+  } catch (e) {
     // 23505 = the partial unique index refused the write, so another live
-    // order holds one of these cells after all and the check above lost a
+    // order holds one of these cells after all and the conflict check lost a
     // race. The money has been taken, so this needs a human and a refund.
-    if (payErr.code === "23505") {
+    if (e.code === "23505") {
       console.error(
         "Netcash notify: unique index refused",
         fields.reference,
         "- payment was accepted but the cells are taken, needs a manual refund"
       );
-      await supabase
-        .from("squares")
-        .update({ status: "conflict" })
-        .eq("m_payment_id", fields.reference)
-        .in("status", RESOLVABLE);
+      try {
+        await settle(fields.reference, "conflict");
+      } catch (inner) {
+        console.error("Netcash notify: couldn't even mark it conflict:", inner.message);
+      }
       return new Response("OK", { status: 200 });
     }
     // Anything else is transient as far as we know. Don't acknowledge: the
-    // order stays resolvable, so a Netcash retry or a manual replay can
-    // still confirm it rather than the payment being silently lost.
-    console.error("Netcash notify: couldn't mark", fields.reference, "paid:", payErr.message);
-    return new Response(payErr.message, { status: 500 });
+    // order stays resolvable, so a Netcash retry or a manual replay can still
+    // confirm it rather than the payment being silently lost.
+    console.error("Netcash notify: couldn't settle", fields.reference, "-", e.message);
+    return new Response("internal error", { status: 500 });
   }
-
-  if (wasExpired) {
-    console.warn(
-      "Netcash notify: revived expired order",
-      fields.reference,
-      "- buyer paid after the checkout window had passed, square confirmed"
-    );
-  }
-
-  return new Response("OK", { status: 200 });
 }

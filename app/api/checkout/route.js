@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { getSupabaseAdmin } from "../../../lib/supabaseAdmin";
+import { query } from "../../../lib/db";
 import { buildPaymentFields, generateReference, NETCASH_PROCESS_URL } from "../../../lib/netcash";
 import {
   getZone,
@@ -9,6 +9,26 @@ import {
   PRICE_PER_SPOT,
   BLOCK_PRICE,
 } from "../../../lib/zones";
+
+// How long a started checkout holds its cells before the sweep below releases
+// them. Kept in step with the same interval in the claimed_squares view.
+const CHECKOUT_WINDOW = "20 minutes";
+
+const INSERT_COLUMNS = [
+  "block_id",
+  "m_payment_id",
+  "zone_id",
+  "col",
+  '"row"',
+  "span",
+  "big",
+  "content",
+  "fill",
+  "order_amount",
+  "buyer_email",
+  "buyer_phone",
+  "status",
+];
 
 export async function POST(request) {
   let body;
@@ -35,87 +55,13 @@ export async function POST(request) {
     return Response.json({ error: "Enter a valid phone number" }, { status: 400 });
   }
 
-  let supabase;
-  try {
-    supabase = getSupabaseAdmin();
-  } catch (e) {
-    return Response.json({ error: e.message }, { status: 500 });
-  }
-
-  // Lazy cleanup (no cron needed): a pending row nobody ever paid for
-  // shouldn't lock its cell forever, so expire anything past a reasonable
-  // checkout window before checking availability.
-  //
-  // This sets `expired`, NOT `cancelled`, and the difference matters: the
-  // buyer may still be sitting on Netcash's payment page and pay after this
-  // sweep has run. Netcash, not this sweep, is the authority on whether
-  // money actually moved, so `expired` is a status the notify callback is
-  // still allowed to resolve into `paid` (see app/api/netcash/notify).
-  // `cancelled` stays reserved for genuinely terminal orders.
-  await supabase
-    .from("squares")
-    .update({ status: "expired" })
-    .eq("status", "pending")
-    .lt("created_at", new Date(Date.now() - 20 * 60 * 1000).toISOString());
-
-  // Re-check availability server-side against paid AND still-pending squares
-  // - the client's view of "reserved" can be stale, and checking pending
-  // too closes the window where two people could both pass this check for
-  // the same cell before either finished paying (the unique index below is
-  // the real, atomic guarantee - this is just a friendlier first check).
-  const { data: liveRows, error: fetchErr } = await supabase
-    .from("squares")
-    .select("col,row,span")
-    .eq("zone_id", zoneId)
-    .in("status", ["paid", "pending"]);
-  if (fetchErr) return Response.json({ error: fetchErr.message }, { status: 500 });
-
-  const occ = new Set();
-  (liveRows || []).forEach((r) => {
-    const sp = r.span || 1;
-    for (let i = 0; i < sp; i++)
-      for (let j = 0; j < sp; j++) occ.add(cellKey(zoneId, r.col + i, r.row + j));
-  });
-
-  if (!validFoot(occ, zone, col, row, size)) {
-    return Response.json({ error: "That spot's just been taken, try another" }, { status: 409 });
-  }
-
   const blockId = crypto.randomUUID();
   const reference = generateReference(); // <= 25 chars, what Netcash calls back with
-  // Logo/doodle images are stored as base64 data URLs directly in the row's
-  // `content` column (they're small - a few hundred KB at most) rather than
-  // a separate object-storage bucket, since Supabase's Postgres is already
-  // the single source of truth here.
-  const entries = pendingEntries({ zoneId, col, row, size, big, slots });
-
   const amount = size === 4 ? BLOCK_PRICE : PRICE_PER_SPOT;
-  const rows = entries.map((e) => ({
-    block_id: blockId,
-    m_payment_id: reference,
-    zone_id: zoneId,
-    col: e.col,
-    row: e.row,
-    span: e.span,
-    big: !!big,
-    content: e.content,
-    fill: e.fill,
-    order_amount: amount,
-    buyer_email: buyerEmail,
-    buyer_phone: buyerPhone,
-    status: "pending",
-  }));
 
-  const { error: insertErr } = await supabase.from("squares").insert(rows);
-  if (insertErr) {
-    // Unique-index violation = someone else's checkout claimed this exact
-    // cell in the split second between the check above and this insert.
-    if (insertErr.code === "23505") {
-      return Response.json({ error: "That spot's just been taken, try another" }, { status: 409 });
-    }
-    return Response.json({ error: insertErr.message }, { status: 500 });
-  }
-
+  // Build the Netcash fields before writing anything. If the service key is
+  // missing this fails, and doing it first means we don't leave a pending row
+  // behind for a checkout that could never have reached Netcash.
   let fields;
   try {
     fields = buildPaymentFields({
@@ -125,7 +71,95 @@ export async function POST(request) {
       extra1: blockId,
     });
   } catch (e) {
-    return Response.json({ error: e.message }, { status: 500 });
+    console.error("POST /api/checkout:", e.message);
+    return Response.json({ error: "Payments aren't configured yet" }, { status: 500 });
+  }
+
+  try {
+    // Lazy cleanup (no cron needed): a pending row nobody ever paid for
+    // shouldn't lock its cell forever, so expire anything past the checkout
+    // window before checking availability.
+    //
+    // This sets `expired`, NOT `cancelled`, and the difference matters: the
+    // buyer may still be sitting on Netcash's payment page and pay after this
+    // sweep has run. Netcash, not this sweep, is the authority on whether
+    // money actually moved, so `expired` is a status the notify callback is
+    // still allowed to resolve into `paid` (see app/api/netcash/notify).
+    // `cancelled` stays reserved for genuinely terminal orders.
+    await query(
+      `update squares
+          set status = 'expired'
+        where status = 'pending'
+          and created_at < now() - interval '${CHECKOUT_WINDOW}'`
+    );
+
+    // Re-check availability server-side against paid AND still-pending squares.
+    // The client's view of "reserved" can be stale, and checking pending too
+    // closes the window where two people could both pass this check for the
+    // same cell before either finished paying. The unique index is the real,
+    // atomic guarantee; this is just a friendlier first check that produces a
+    // decent error message instead of a constraint violation.
+    const { rows: liveRows } = await query(
+      `select col, "row", span
+         from squares
+        where zone_id = $1
+          and status in ('paid', 'pending')`,
+      [zoneId]
+    );
+
+    const occ = new Set();
+    liveRows.forEach((r) => {
+      const sp = r.span || 1;
+      for (let i = 0; i < sp; i++)
+        for (let j = 0; j < sp; j++) occ.add(cellKey(zoneId, r.col + i, r.row + j));
+    });
+
+    if (!validFoot(occ, zone, col, row, size)) {
+      return Response.json({ error: "That spot's just been taken, try another" }, { status: 409 });
+    }
+
+    // Logo/doodle images are stored as base64 data URLs directly in the row's
+    // `content` column rather than in object storage, since Postgres is
+    // already the single source of truth here.
+    const entries = pendingEntries({ zoneId, col, row, size, big, slots });
+
+    const values = [];
+    const tuples = entries.map((e) => {
+      const placeholders = [
+        blockId,
+        reference,
+        zoneId,
+        e.col,
+        e.row,
+        e.span,
+        !!big,
+        e.content ?? null,
+        e.fill,
+        amount,
+        buyerEmail,
+        buyerPhone,
+        "pending",
+      ].map((v) => {
+        values.push(v);
+        return `$${values.length}`;
+      });
+      return `(${placeholders.join(", ")})`;
+    });
+
+    // One statement, so a block of 4 is all-or-nothing: if any cell is taken
+    // the whole order fails rather than leaving a half-claimed block.
+    await query(
+      `insert into squares (${INSERT_COLUMNS.join(", ")}) values ${tuples.join(", ")}`,
+      values
+    );
+  } catch (e) {
+    // 23505 = unique-index violation, so someone else's checkout claimed this
+    // exact cell in the split second between the check above and the insert.
+    if (e.code === "23505") {
+      return Response.json({ error: "That spot's just been taken, try another" }, { status: 409 });
+    }
+    console.error("POST /api/checkout:", e.message);
+    return Response.json({ error: "Couldn't reserve that square, please try again" }, { status: 500 });
   }
 
   return Response.json({ url: NETCASH_PROCESS_URL, fields });
