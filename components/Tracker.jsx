@@ -1,79 +1,77 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { fmt, zonesFor } from "../lib/useRainbow500";
+import { fmt } from "../lib/useRainbow500";
 
 const RAINBOW_GRADIENT =
   "linear-gradient(90deg,#e11d48,#f97316,#eab308,#16a34a,#0ea5e9,#6366f1,#a855f7)";
 
-const CANVAS_W = 180;
-const CANVAS_H = 225;
+const RING_SIZE = 200;
+const RING_STROKE = 16;
+const RING_R = (RING_SIZE - RING_STROKE) / 2;
+const RING_C = 2 * Math.PI * RING_R;
 
-function TrackerCanvas({ label, panel, reserved }) {
-  const ref = useRef(null);
-  const zones = zonesFor(panel);
-
-  useEffect(() => {
-    const cv = ref.current;
-    if (!cv) return;
-    const W = (cv.width = CANVAS_W);
-    const H = (cv.height = CANVAS_H);
-    const ctx = cv.getContext("2d");
-    ctx.clearRect(0, 0, W, H);
-
-    zones.forEach((zone) => {
-      const zx = (zone.box.x / 100) * W;
-      const zy = (zone.box.y / 100) * H;
-      const zw = (zone.box.w / 100) * W;
-      const zh = (zone.box.h / 100) * H;
-      const cw = zw / zone.cols;
-      const ch = zh / zone.rows;
-      const excluded = (c, r) =>
-        zone.exclude.some((z) => c >= z.c0 && c <= z.c1 && r >= z.r0 && r <= z.r1);
-      for (let c = 0; c < zone.cols; c++) {
-        for (let r = 0; r < zone.rows; r++) {
-          if (excluded(c, r)) continue;
-          ctx.fillStyle = "#24405f";
-          ctx.fillRect(zx + c * cw + 0.5, zy + r * ch + 0.5, Math.max(1, cw - 1), Math.max(1, ch - 1));
-        }
-      }
-      Object.values(reserved)
-        .filter((e) => e.zoneId === zone.id)
-        .forEach((e) => {
-          const sp = e.span || 1;
-          ctx.fillStyle = e.fill || "#12151c";
-          ctx.fillRect(zx + e.col * cw + 0.5, zy + e.row * ch + 0.5, Math.max(1, cw * sp - 1), Math.max(1, ch * sp - 1));
-        });
-    });
-  }, [reserved, zones]);
+function ProgressRing({ pct, claimed, total }) {
+  const offset = RING_C * (1 - Math.min(100, pct) / 100);
 
   return (
-    <div style={{ background: "#10203a", border: "1px solid #24405f", borderRadius: 16, padding: 16 }}>
-      <div
-        style={{
-          fontSize: 11,
-          letterSpacing: ".14em",
-          textTransform: "uppercase",
-          color: "#8b8b93",
-          fontWeight: 800,
-          textAlign: "center",
-          marginBottom: 10,
-        }}
-      >
-        {label}
+    <div
+      style={{
+        background: "#10203a",
+        border: "1px solid #24405f",
+        borderRadius: 16,
+        padding: 24,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+      }}
+    >
+      <div style={{ position: "relative", width: RING_SIZE, height: RING_SIZE }}>
+        <svg width={RING_SIZE} height={RING_SIZE} style={{ transform: "rotate(-90deg)" }}>
+          <defs>
+            <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#e11d48" />
+              <stop offset="20%" stopColor="#f97316" />
+              <stop offset="40%" stopColor="#eab308" />
+              <stop offset="60%" stopColor="#16a34a" />
+              <stop offset="80%" stopColor="#0ea5e9" />
+              <stop offset="100%" stopColor="#a855f7" />
+            </linearGradient>
+          </defs>
+          <circle cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RING_R} stroke="#1a3050" strokeWidth={RING_STROKE} fill="none" />
+          <circle
+            cx={RING_SIZE / 2}
+            cy={RING_SIZE / 2}
+            r={RING_R}
+            stroke="url(#ringGradient)"
+            strokeWidth={RING_STROKE}
+            fill="none"
+            strokeDasharray={RING_C}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            style={{ transition: "stroke-dashoffset .5s ease" }}
+          />
+        </svg>
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div style={{ fontSize: 44, fontWeight: 900, color: "#fff", lineHeight: 1 }}>{pct}%</div>
+          <div style={{ fontSize: 12, color: "#8b8b93", fontWeight: 700, letterSpacing: ".06em", textTransform: "uppercase", marginTop: 6 }}>
+            of the shirt filled
+          </div>
+        </div>
       </div>
-      <canvas
-        ref={ref}
-        style={{
-          width: "100%",
-          maxWidth: 150,
-          height: "auto",
-          imageRendering: "pixelated",
-          display: "block",
-          margin: "0 auto",
-          borderRadius: 6,
-        }}
-      />
+      <div style={{ fontSize: 13, color: "#8b8b93", fontWeight: 700, marginTop: 8 }}>
+        <span style={{ color: "#fff" }}>{claimed}</span> of {total} squares claimed
+      </div>
     </div>
   );
 }
@@ -89,7 +87,7 @@ function Stat({ big, small, color }) {
   );
 }
 
-export default function Tracker({ claimed, total, raised, price, reserved }) {
+export default function Tracker({ claimed, total, raised, price }) {
   const pct = Math.round((claimed / total) * 100);
   const remaining = total - claimed;
   const pctLabel = Math.min(100, (claimed / total) * 100).toFixed(1) + "%";
@@ -144,9 +142,8 @@ export default function Tracker({ claimed, total, raised, price, reserved }) {
         />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1.3fr", gap: 16, alignItems: "stretch" }}>
-        <TrackerCanvas label="Front" panel="front" reserved={reserved} />
-        <TrackerCanvas label="Back" panel="back" reserved={reserved} />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.3fr", gap: 16, alignItems: "stretch" }}>
+        <ProgressRing pct={pct} claimed={claimed} total={total} />
         <div
           style={{
             background: "#10203a",
@@ -170,12 +167,6 @@ export default function Tracker({ claimed, total, raised, price, reserved }) {
             }}
           />
           <div style={{ position: "relative", display: "flex", gap: 28, flexWrap: "wrap" }}>
-            <div>
-              <div style={{ fontSize: 40, fontWeight: 900 }}>{pct}%</div>
-              <div style={{ fontSize: 12, color: "#c7ccd4", fontWeight: 700, letterSpacing: ".04em", textTransform: "uppercase" }}>
-                of the shirt filled
-              </div>
-            </div>
             <Stat big={fmt(claimed)} small="squares secured" color="#8bf0b0" />
             <Stat big={fmt(remaining)} small="squares left" color="#ffd27a" />
             <Stat big={"R" + fmt(raised)} small="raised" color="#a5c8ff" />
