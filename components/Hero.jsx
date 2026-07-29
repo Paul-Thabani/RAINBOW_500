@@ -150,7 +150,7 @@ export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
         >
           <img
             src="/assets/top-shirt.png?v=3"
-            alt="HBUFC The Goal is Love kit, front (the finished vision)"
+            alt="The HBUFC The Goal is Love kit, front, showing how the shirt could look once every square is claimed"
             style={{ display: "block", width: "94%", height: "auto", margin: "0 auto" }}
           />
           <div
@@ -164,7 +164,22 @@ export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
               fontWeight: 700,
             }}
           >
-            The 2026/27 shirt · the finished vision
+            The 2026/27 shirt
+          </div>
+          {/* This is the mockup of the filled shirt, so the caption belongs
+              here rather than over the interactive board. It replaces "the
+              finished vision", which said the same thing less clearly. */}
+          <div
+            style={{
+              textAlign: "center",
+              marginTop: 7,
+              fontSize: 12.5,
+              lineHeight: 1.45,
+              color: "#8b8b93",
+              fontWeight: 600,
+            }}
+          >
+            A preview of how the shirt could look once all {total} spots are claimed.
           </div>
         </div>
       </div>
