@@ -5,8 +5,8 @@ export default function HowItWorks({ price, blockPrice }) {
   const steps = [
     { n: "1", color: "#eb2b29", t: "Open the shirt", d: "Scroll to the shirt and find an open square or block." },
     { n: "2", color: "#2cae4a", t: "Pick a square or block", d: `One square is R${fmt(price)}, a block of four is R${fmt(blockPrice)}.` },
-    { n: "3", color: "#117ec2", t: "Add your collateral", d: "Logo, message or doodle, or one big piece across the block." },
-    { n: "4", color: "#e41f91", t: "Secure & renew", d: "Light up the live tracker: your square is yours for life." },
+    { n: "3", color: "#117ec2", t: "Add your artwork", d: "A logo, a message or a doodle, or one big piece across the block." },
+    { n: "4", color: "#e41f91", t: "Secure and renew", d: "Light up the live tracker. The square stays yours for as long as you renew it." },
   ];
 
   return (

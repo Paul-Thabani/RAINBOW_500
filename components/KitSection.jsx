@@ -57,7 +57,7 @@ export default function KitSection({
           </h2>
           <p style={{ margin: "10px 0 0", color: "#8b8b93", fontSize: 16, maxWidth: 560, lineHeight: 1.55 }}>
             Choose a single square or a block of four, then click an open place on the shirt to make
-            it yours, for life.
+            it yours.
           </p>
         </div>
       </div>

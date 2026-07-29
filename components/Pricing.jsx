@@ -18,7 +18,7 @@ export default function Pricing({ price, blockPrice }) {
         }}
       >
         <span style={{ width: 26, height: 3, borderRadius: 2, background: RAINBOW_GRADIENT }} />
-        The squares
+        What you get
       </div>
       <h2
         style={{
@@ -30,7 +30,7 @@ export default function Pricing({ price, blockPrice }) {
           textTransform: "uppercase",
         }}
       >
-        Claim one, for life.
+        Claim your patch of the shirt.
       </h2>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
         <div style={{ background: "#10203a", border: "1px solid #24405f", borderRadius: 20, padding: 30 }}>
@@ -45,7 +45,7 @@ export default function Pricing({ price, blockPrice }) {
           </div>
           <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: "-.02em", marginBottom: 4 }}>R{fmt(price)}</div>
           <div style={{ fontSize: 13, color: "#8b8b93", fontWeight: 600, marginBottom: 20 }}>
-            $100 · €100 · £90 · renew every season
+            Renew each season to keep the same square
           </div>
           <div style={{ color: "#b9bac2", fontSize: 14, lineHeight: 1.55 }}>
             Put your logo, a message, or a doodle in your square. It&apos;s yours to renew, season after
@@ -86,7 +86,7 @@ export default function Pricing({ price, blockPrice }) {
           </div>
           <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: "-.02em", marginBottom: 4 }}>R{fmt(blockPrice)}</div>
           <div style={{ fontSize: 13, color: "#8b8b93", fontWeight: 600, marginBottom: 20 }}>
-            $350 · €350 · £315 · renew every season
+            Renew each season to keep the same block
           </div>
           <div style={{ color: "#b9bac2", fontSize: 14, lineHeight: 1.55 }}>
             Same deal, bigger space. Plus we spotlight your business across our social channels all
