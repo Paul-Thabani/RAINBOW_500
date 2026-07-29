@@ -88,8 +88,12 @@ export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
             ★
           </div>
           <div style={{ fontSize: 15, lineHeight: 1.5, color: "#b9bac2", maxWidth: 460 }}>
-            <strong style={{ color: "#fff" }}>Every square includes a free shirt.</strong> Once your purchase
-            is confirmed we&apos;ll email you a short form to capture your size.
+            {/* Explicit {" "} because JSX trims whitespace at the start of a
+                line, so the space after </strong> was being swallowed and it
+                rendered as "free shirt.Once your purchase". Same reason
+                Belief.jsx and FabricCTA.jsx use this pattern. */}
+            <strong style={{ color: "#fff" }}>Every square includes a free shirt.</strong>{" "}
+            Once your purchase is confirmed we&apos;ll email you a short form to capture your size.
           </div>
         </div>
         <div style={{ display: "flex", gap: 40, flexWrap: "wrap" }}>
