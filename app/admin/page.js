@@ -70,7 +70,7 @@ function Stat({ label, value, color, accent }) {
 }
 
 function ContentPreview({ content }) {
-  if (!content) return <span style={{ color: "#4b5563" }}>—</span>;
+  if (!content) return <span style={{ color: "#4b5563" }}>-</span>;
   if (content.type === "image") {
     return (
       <img
@@ -84,15 +84,18 @@ function ContentPreview({ content }) {
   if (content.type === "text") {
     return (
       <span
-        title={content.text}
         style={{
           display: "inline-block",
-          maxWidth: 110,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
+          maxWidth: 220,
+          // Wrap the whole message rather than cutting it off with an
+          // ellipsis. This is the thing the buyer paid to put on the shirt, so
+          // whoever is fulfilling the order has to be able to read all of it.
+          // break-word only splits a word that cannot fit on its own line, so
+          // ordinary messages still break at spaces.
+          overflowWrap: "break-word",
           fontSize: 12,
           fontStyle: "italic",
+          lineHeight: 1.35,
           color: "#cfd0d6",
         }}
       >
@@ -100,7 +103,7 @@ function ContentPreview({ content }) {
       </span>
     );
   }
-  return <span style={{ color: "#4b5563" }}>—</span>;
+  return <span style={{ color: "#4b5563" }}>-</span>;
 }
 
 function StatusPill({ status }) {
@@ -277,8 +280,8 @@ export default async function AdminPage() {
             <tbody>
               {orders.map((o) => (
                 <tr key={o.blockId} className="rb-admin-row" style={{ borderBottom: "1px solid #1a3050" }}>
-                  <td style={{ ...td, fontWeight: 700, color: "#eef1f6" }}>{o.buyerEmail || "—"}</td>
-                  <td style={{ ...td, color: "#cfd0d6", fontVariantNumeric: "tabular-nums" }}>{o.buyerPhone || "—"}</td>
+                  <td style={{ ...td, fontWeight: 700, color: "#eef1f6" }}>{o.buyerEmail || "-"}</td>
+                  <td style={{ ...td, color: "#cfd0d6", fontVariantNumeric: "tabular-nums" }}>{o.buyerPhone || "-"}</td>
                   <td style={{ ...td, color: "#cfd0d6" }}>{o.zoneId}</td>
                   <td style={{ ...td, fontFamily: "ui-monospace,monospace", fontSize: 12.5, color: "#cfd0d6" }}>
                     {o.cells.map((c) => `(${c.col},${c.row})`).join(", ")}
@@ -298,7 +301,7 @@ export default async function AdminPage() {
                     {new Date(o.createdAt).toLocaleString()}
                   </td>
                   <td style={{ ...td, color: "#8b8b93", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
-                    {o.paidAt ? new Date(o.paidAt).toLocaleString() : "—"}
+                    {o.paidAt ? new Date(o.paidAt).toLocaleString() : "-"}
                   </td>
                   <td style={{ ...td, color: "#6b7280", fontFamily: "ui-monospace,monospace", fontSize: 12 }}>
                     {o.reference}
