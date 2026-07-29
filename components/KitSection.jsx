@@ -115,19 +115,6 @@ export default function KitSection({
             onPick={onPick}
           />
         </div>
-
-        <p
-          style={{
-            margin: "14px 0 0",
-            textAlign: "center",
-            fontSize: 13.5,
-            lineHeight: 1.5,
-            color: "#8b8b93",
-            fontWeight: 600,
-          }}
-        >
-          A preview of how the shirt could look once all 500 spots are claimed.
-        </p>
       </div>
 
       <DesignNote />
