@@ -1,7 +1,5 @@
 import { fmt } from "../lib/useRainbow500";
-
-const RAINBOW_GRADIENT =
-  "linear-gradient(90deg,#e11d48,#f97316,#eab308,#16a34a,#0ea5e9,#6366f1,#a855f7)";
+import { RAINBOW_GRADIENT, RAINBOW_SURFACE, RAINBOW_SURFACE_INK } from "../lib/brand";
 
 export default function Pricing({ price, blockPrice }) {
   return (
@@ -40,7 +38,7 @@ export default function Pricing({ price, blockPrice }) {
             <div style={{ fontWeight: 900, fontSize: 20, letterSpacing: "-.01em", textTransform: "uppercase" }}>
               One square
             </div>
-            <div style={{ width: 26, height: 26, borderRadius: 6, background: "linear-gradient(135deg,#0ea5e9,#a855f7)" }} />
+            <div style={{ width: 26, height: 26, borderRadius: 6, background: "linear-gradient(135deg,#117ec2,#e41f91)" }} />
           </div>
           <div style={{ fontSize: 12, color: "#8b8b93", letterSpacing: ".06em", textTransform: "uppercase", fontWeight: 700, marginBottom: 20 }}>
             1 × 1 · your patch of the shirt
@@ -74,8 +72,8 @@ export default function Pricing({ price, blockPrice }) {
                 fontWeight: 900,
                 letterSpacing: ".12em",
                 textTransform: "uppercase",
-                color: "#0a0a0c",
-                background: RAINBOW_GRADIENT,
+                color: RAINBOW_SURFACE_INK,
+                background: RAINBOW_SURFACE,
                 padding: "6px 11px",
                 borderRadius: 999,
               }}

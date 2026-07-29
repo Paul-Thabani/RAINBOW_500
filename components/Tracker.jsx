@@ -1,9 +1,7 @@
 "use client";
 
 import { fmt } from "../lib/useRainbow500";
-
-const RAINBOW_GRADIENT =
-  "linear-gradient(90deg,#e11d48,#f97316,#eab308,#16a34a,#0ea5e9,#6366f1,#a855f7)";
+import { RAINBOW_GRADIENT, RAINBOW_STOPS } from "../lib/brand";
 
 const RING_SIZE = 200;
 const RING_STROKE = 16;
@@ -30,13 +28,12 @@ function ProgressRing({ pct, claimed, total }) {
       <div style={{ position: "relative", width: RING_SIZE, height: RING_SIZE }}>
         <svg width={RING_SIZE} height={RING_SIZE} style={{ transform: "rotate(-90deg)" }}>
           <defs>
+            {/* Driven from the shared stops rather than hand-listed, so the ring
+                can never drift away from the crest the way it had. */}
             <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#e11d48" />
-              <stop offset="20%" stopColor="#f97316" />
-              <stop offset="40%" stopColor="#eab308" />
-              <stop offset="60%" stopColor="#16a34a" />
-              <stop offset="80%" stopColor="#0ea5e9" />
-              <stop offset="100%" stopColor="#a855f7" />
+              {RAINBOW_STOPS.map((c, i) => (
+                <stop key={c} offset={`${(i / (RAINBOW_STOPS.length - 1)) * 100}%`} stopColor={c} />
+              ))}
             </linearGradient>
           </defs>
           <circle cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={RING_R} stroke="#1a3050" strokeWidth={RING_STROKE} fill="none" />
@@ -162,7 +159,7 @@ export default function Tracker({ claimed, total, raised, price }) {
             style={{
               position: "absolute",
               inset: 0,
-              background: "linear-gradient(120deg,rgba(225,29,72,.16),rgba(14,165,233,.16),rgba(168,85,247,.18))",
+              background: "linear-gradient(120deg,rgba(235,43,41,.16),rgba(17,126,194,.16),rgba(228,31,145,.18))",
               opacity: 0.55,
             }}
           />

@@ -34,7 +34,7 @@ export default function FinalAsk({ onJoin, price }) {
             position: "absolute",
             inset: 0,
             background:
-              "linear-gradient(90deg,rgba(225,29,72,.14),rgba(249,115,22,.12),rgba(234,179,8,.1),rgba(22,163,74,.12),rgba(14,165,233,.14),rgba(99,102,241,.16),rgba(168,85,247,.2))",
+              "linear-gradient(90deg,rgba(235,43,41,.14),rgba(243,126,33,.12),rgba(246,234,12,.1),rgba(44,174,74,.12),rgba(17,126,194,.14),rgba(95,78,161,.16),rgba(228,31,145,.2))",
             opacity: 0.7,
           }}
         />

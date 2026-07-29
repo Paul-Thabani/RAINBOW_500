@@ -1,7 +1,5 @@
 import Crest from "./Crest";
-
-const RAINBOW_GRADIENT =
-  "linear-gradient(90deg,#e11d48,#f97316,#eab308,#16a34a,#0ea5e9,#6366f1,#a855f7)";
+import { RAINBOW_GRADIENT, RAINBOW_SURFACE, RAINBOW_SURFACE_INK } from "../lib/brand";
 
 export default function Header({ onJoin }) {
   return (
@@ -54,8 +52,8 @@ export default function Header({ onJoin }) {
             fontWeight: 800,
             fontSize: 13,
             letterSpacing: ".04em",
-            color: "#0a0a0c",
-            background: RAINBOW_GRADIENT,
+            color: RAINBOW_SURFACE_INK,
+            background: RAINBOW_SURFACE,
             padding: "11px 18px",
             borderRadius: 999,
             border: "none",

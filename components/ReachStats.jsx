@@ -1,5 +1,4 @@
-const RAINBOW_GRADIENT =
-  "linear-gradient(90deg,#e11d48,#f97316,#eab308,#16a34a,#0ea5e9,#6366f1,#a855f7)";
+import { RAINBOW_GRADIENT } from "../lib/brand";
 
 const DIGITAL = [
   { big: "468,228", small: "Search impressions" },
@@ -9,9 +8,9 @@ const DIGITAL = [
 ];
 
 const AUDIENCE = [
-  { big: "97%", small: "South African", color: "#16a34a" },
-  { big: "82%", small: "Mobile users", color: "#0ea5e9" },
-  { big: "7.5%", small: "Search CTR · 3× industry avg", color: "#a855f7" },
+  { big: "97%", small: "South African", color: "#2cae4a" },
+  { big: "82%", small: "Mobile users", color: "#117ec2" },
+  { big: "7.5%", small: "Search CTR · 3× industry avg", color: "#e41f91" },
 ];
 
 const SOCIAL = [
@@ -82,7 +81,7 @@ export default function ReachStats() {
       </div>
       <div
         style={{
-          background: "linear-gradient(120deg,rgba(225,29,72,.12),rgba(14,165,233,.1),rgba(168,85,247,.14))",
+          background: "linear-gradient(120deg,rgba(235,43,41,.12),rgba(17,126,194,.1),rgba(228,31,145,.14))",
           border: "1px solid #24405f",
           borderRadius: 20,
           padding: 32,
