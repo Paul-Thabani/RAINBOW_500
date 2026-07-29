@@ -3,12 +3,10 @@
 import { fmt, spotColor, pendingEntries, getZone, zonesFor } from "../lib/useRainbow500";
 import { RegionOverlay } from "./ShirtPanel";
 import DoodleCanvas from "./DoodleCanvas";
+import { RAINBOW_GRADIENT } from "../lib/brand";
 
 const FRONT_ZONES = zonesFor("front");
 const BACK_ZONES = zonesFor("back");
-
-const RAINBOW_GRADIENT =
-  "linear-gradient(90deg,#e11d48,#f97316,#eab308,#16a34a,#0ea5e9,#6366f1,#a855f7)";
 
 function segMode(active) {
   return {
@@ -119,7 +117,7 @@ function PreviewGrid({ ed }) {
           key={i}
           style={{
             position: "relative",
-            outline: ed.active === i ? "2px solid #6366f1" : "none",
+            outline: ed.active === i ? "2px solid #5f4ea1" : "none",
             outlineOffset: 1,
             borderRadius: 10,
           }}
@@ -400,7 +398,7 @@ export default function EditorModal({
                           width: 8,
                           height: 8,
                           borderRadius: "50%",
-                          background: ed.slots[i] ? "#16a34a" : "#cfd3da",
+                          background: ed.slots[i] ? "#2cae4a" : "#cfd3da",
                         }}
                       />
                     </button>

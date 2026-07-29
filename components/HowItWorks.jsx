@@ -1,14 +1,12 @@
 import { fmt } from "../lib/useRainbow500";
-
-const RAINBOW_GRADIENT =
-  "linear-gradient(90deg,#e11d48,#f97316,#eab308,#16a34a,#0ea5e9,#6366f1,#a855f7)";
+import { RAINBOW_GRADIENT } from "../lib/brand";
 
 export default function HowItWorks({ price, blockPrice }) {
   const steps = [
-    { n: "1", color: "#e11d48", t: "Open the shirt", d: "Scroll to the shirt and find an open square or block." },
-    { n: "2", color: "#16a34a", t: "Pick a square or block", d: `One square is R${fmt(price)}, a block of four is R${fmt(blockPrice)}.` },
-    { n: "3", color: "#0ea5e9", t: "Add your collateral", d: "Logo, message or doodle, or one big piece across the block." },
-    { n: "4", color: "#a855f7", t: "Secure & renew", d: "Light up the live tracker: your square is yours for life." },
+    { n: "1", color: "#eb2b29", t: "Open the shirt", d: "Scroll to the shirt and find an open square or block." },
+    { n: "2", color: "#2cae4a", t: "Pick a square or block", d: `One square is R${fmt(price)}, a block of four is R${fmt(blockPrice)}.` },
+    { n: "3", color: "#117ec2", t: "Add your collateral", d: "Logo, message or doodle, or one big piece across the block." },
+    { n: "4", color: "#e41f91", t: "Secure & renew", d: "Light up the live tracker: your square is yours for life." },
   ];
 
   return (

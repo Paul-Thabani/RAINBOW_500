@@ -1,5 +1,6 @@
 import { query } from "../../lib/db";
 import { fmt } from "../../lib/zones";
+import { RAINBOW_GRADIENT } from "../../lib/brand";
 
 // Most recent orders to render. Abandoned checkouts accumulate a row each, so
 // this will eventually bite; the page says so explicitly rather than quietly
@@ -9,9 +10,6 @@ const ORDER_LIMIT = 1000;
 // Always hits the database fresh - this page shows live order/payment
 // status, so it must never be statically cached.
 export const dynamic = "force-dynamic";
-
-const RAINBOW_GRADIENT =
-  "linear-gradient(90deg,#e11d48,#f97316,#eab308,#16a34a,#0ea5e9,#6366f1,#a855f7)";
 
 const STATUS_STYLE = {
   paid: { color: "#8bf0b0", bg: "rgba(139,240,176,.12)" },
@@ -237,11 +235,11 @@ export default async function AdminPage() {
         )}
 
         <div style={{ display: "flex", gap: 14, marginBottom: 28, flexWrap: "wrap" }}>
-          <Stat label="Orders" value={orders.length} accent="#6366f1" />
-          <Stat label="Paid" value={paidOrders.length} color="#8bf0b0" accent="#16a34a" />
-          <Stat label="Pending" value={pendingCount} color="#ffd27a" accent="#eab308" />
-          {conflictCount > 0 && <Stat label="Conflicts" value={conflictCount} color="#fdba74" accent="#f97316" />}
-          <Stat label="Raised" value={"R" + fmt(totalRaised)} color="#a5c8ff" accent="#0ea5e9" />
+          <Stat label="Orders" value={orders.length} accent="#5f4ea1" />
+          <Stat label="Paid" value={paidOrders.length} color="#8bf0b0" accent="#2cae4a" />
+          <Stat label="Pending" value={pendingCount} color="#ffd27a" accent="#f6ea0c" />
+          {conflictCount > 0 && <Stat label="Conflicts" value={conflictCount} color="#fdba74" accent="#f37e21" />}
+          <Stat label="Raised" value={"R" + fmt(totalRaised)} color="#a5c8ff" accent="#117ec2" />
         </div>
 
         {totalOrders > orders.length && (

@@ -115,7 +115,13 @@ export function RegionOverlay({ zone, reserved, extra, hi, interactive, hover, o
 
   return (
     <div style={{ position: "absolute", left: R.x + "%", top: R.y + "%", width: R.w + "%", height: R.h + "%", zIndex: 2 }}>
-      {interactive && <OpenCellMarkers zone={zone} entries={entries} />}
+      {/* Markers only for the zones that make up the headline 500, so the board
+          a visitor sees contains exactly 500 boxes. The bonus sleeve and crest
+          squares stay claimable, they just aren't drawn as open boxes, which is
+          also what keeps every drawn box the same size: the bonus zones use much
+          coarser grids than the torso, so their cells rendered noticeably
+          larger. */}
+      {interactive && zone.counted && <OpenCellMarkers zone={zone} entries={entries} />}
 
       {entries.map((e) => {
         const sp = e.span || 1;
@@ -165,8 +171,8 @@ export function RegionOverlay({ zone, reserved, extra, hi, interactive, hover, o
             width: cw * hover.span + "%",
             height: ch * hover.span + "%",
             boxSizing: "border-box",
-            border: "2px solid " + (hover.valid ? "#16a34a" : "#e11d48"),
-            background: hover.valid ? "rgba(22,163,74,.18)" : "rgba(225,29,72,.16)",
+            border: "2px solid " + (hover.valid ? "#2cae4a" : "#eb2b29"),
+            background: hover.valid ? "rgba(44,174,74,.18)" : "rgba(235,43,41,.16)",
             borderRadius: 3,
             zIndex: 3,
             pointerEvents: "none",

@@ -1,7 +1,5 @@
 import { fmt } from "../lib/useRainbow500";
-
-const RAINBOW_GRADIENT =
-  "linear-gradient(90deg,#e11d48,#f97316,#eab308,#16a34a,#0ea5e9,#6366f1,#a855f7)";
+import { RAINBOW_GRADIENT } from "../lib/brand";
 
 export default function Idea({ price, total }) {
   return (

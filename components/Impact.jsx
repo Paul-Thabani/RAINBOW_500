@@ -1,11 +1,10 @@
-const RAINBOW_GRADIENT =
-  "linear-gradient(90deg,#e11d48,#f97316,#eab308,#16a34a,#0ea5e9,#6366f1,#a855f7)";
+import { RAINBOW_GRADIENT } from "../lib/brand";
 
 const IMPACT = [
-  { t: "Nutrition", color: "#e11d48", d: "Fuelling young athletes to compete at the highest level." },
-  { t: "Education", color: "#eab308", d: "Opportunity on and off the field, for life after the game." },
-  { t: "Safe Housing", color: "#0ea5e9", d: "Stability for the players who carry our community's hopes." },
-  { t: "Local Manufacture", color: "#a855f7", d: "A local manufacturer making our shirt: money that stays home." },
+  { t: "Nutrition", color: "#eb2b29", d: "Fuelling young athletes to compete at the highest level." },
+  { t: "Education", color: "#f6ea0c", d: "Opportunity on and off the field, for life after the game." },
+  { t: "Safe Housing", color: "#117ec2", d: "Stability for the players who carry our community's hopes." },
+  { t: "Local Manufacture", color: "#e41f91", d: "A local manufacturer making our shirt: money that stays home." },
 ];
 
 export default function Impact() {

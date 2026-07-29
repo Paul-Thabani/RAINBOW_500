@@ -1,7 +1,5 @@
 import { fmt } from "../lib/useRainbow500";
-
-const RAINBOW_GRADIENT =
-  "linear-gradient(90deg,#e11d48,#f97316,#eab308,#16a34a,#0ea5e9,#6366f1,#a855f7)";
+import { RAINBOW_GRADIENT, RAINBOW_SURFACE, RAINBOW_SURFACE_INK } from "../lib/brand";
 
 export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
   const left = total - claimed;
@@ -61,8 +59,8 @@ export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
               fontFamily: "inherit",
               fontWeight: 800,
               fontSize: 16,
-              color: "#0a0a0c",
-              background: RAINBOW_GRADIENT,
+              color: RAINBOW_SURFACE_INK,
+              background: RAINBOW_SURFACE,
               padding: "15px 26px",
               borderRadius: 999,
               border: "none",
@@ -79,12 +77,12 @@ export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
               width: 34,
               height: 34,
               borderRadius: 10,
-              background: RAINBOW_GRADIENT,
+              background: RAINBOW_SURFACE,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               fontSize: 16,
-              color: "#12151c",
+              color: RAINBOW_SURFACE_INK,
             }}
           >
             ★
@@ -133,7 +131,7 @@ export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
             position: "absolute",
             inset: "-12% -8%",
             background:
-              "radial-gradient(circle at 50% 40%, rgba(168,85,247,.22), rgba(14,165,233,.14) 45%, transparent 70%)",
+              "radial-gradient(circle at 50% 40%, rgba(228,31,145,.22), rgba(17,126,194,.14) 45%, transparent 70%)",
             filter: "blur(10px)",
           }}
         />

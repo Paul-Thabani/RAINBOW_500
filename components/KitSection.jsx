@@ -1,12 +1,10 @@
 import { fmt, zonesFor } from "../lib/useRainbow500";
 import ShirtPanel from "./ShirtPanel";
 import DesignNote from "./DesignNote";
+import { RAINBOW_GRADIENT } from "../lib/brand";
 
 const FRONT_ZONES = zonesFor("front");
 const BACK_ZONES = zonesFor("back");
-
-const RAINBOW_GRADIENT =
-  "linear-gradient(90deg,#e11d48,#f97316,#eab308,#16a34a,#0ea5e9,#6366f1,#a855f7)";
 
 function segStyle(active) {
   return {
@@ -117,6 +115,19 @@ export default function KitSection({
             onPick={onPick}
           />
         </div>
+
+        <p
+          style={{
+            margin: "14px 0 0",
+            textAlign: "center",
+            fontSize: 13.5,
+            lineHeight: 1.5,
+            color: "#8b8b93",
+            fontWeight: 600,
+          }}
+        >
+          A preview of how the shirt could look once all 500 spots are claimed.
+        </p>
       </div>
 
       <DesignNote />
