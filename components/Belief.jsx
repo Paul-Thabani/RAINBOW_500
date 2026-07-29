@@ -33,7 +33,7 @@ export default function Belief() {
             }}
           >
             <span style={{ width: 26, height: 3, borderRadius: 2, background: RAINBOW_GRADIENT }} />
-            The belief
+            Why we&apos;re doing this
           </div>
           <h2
             style={{
@@ -59,7 +59,7 @@ export default function Belief() {
             </span>
           </h2>
           <p style={{ fontSize: 17, lineHeight: 1.6, color: "#8b8b93", maxWidth: 560, margin: "18px 0 0" }}>
-            Not a product. Not a billboard. Not extortion dressed up as passion. Big clubs sell the front of
+            Not a product, and not a billboard. Big clubs sell the front of
             their shirt to a corporate sponsor for millions, but our games aren&apos;t on TV, so no sponsor sees
             value in ours. As a community club, that door is closed to us. So we&apos;re doing it a different
             way.

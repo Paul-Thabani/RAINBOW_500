@@ -28,7 +28,7 @@ export default function FabricCTA() {
         of our shirt.
       </h2>
       <p style={{ fontSize: 17, color: "#8b8b93", margin: "20px auto 0", maxWidth: 460 }}>
-        Part of the community. Woven into HBUFC, forever.
+        Part of the community, and woven into the shirt we play in.
       </p>
     </section>
   );

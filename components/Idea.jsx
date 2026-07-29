@@ -89,10 +89,10 @@ export default function Idea({ price, total }) {
         </div>
       </div>
       <p style={{ fontSize: 16, color: "#8b8b93", margin: "26px 0 0", fontWeight: 600 }}>
-        Real money, from real people, for a real cause.
+        Real money from real people, going straight to the players.
       </p>
       <p style={{ fontSize: 14, color: "#6d6d76", margin: "10px 0 0", maxWidth: 560, lineHeight: 1.55 }}>
-        The math is simple: {fmt(total)} squares on one shirt, R{fmt(price)} each, no sponsor required.
+        The maths is simple: {fmt(total)} squares on one shirt, R{fmt(price)} each, no sponsor required.
       </p>
     </section>
   );
