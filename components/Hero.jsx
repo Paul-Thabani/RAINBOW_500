@@ -149,9 +149,9 @@ export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
           }}
         >
           <img
-            src="/assets/kit-hero.png?v=1"
+            src="/assets/kit-hero-boxed.jpg?v=1"
             alt="The HBUFC The Goal is Love kit, showing how the shirt could look once every square is claimed"
-            style={{ display: "block", width: "94%", height: "auto", margin: "0 auto" }}
+            style={{ display: "block", width: "100%", height: "auto", margin: "0 auto", borderRadius: 16 }}
           />
           <div
             style={{
