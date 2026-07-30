@@ -93,7 +93,8 @@ export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
                 rendered as "free shirt.Once your purchase". Same reason
                 Belief.jsx and FabricCTA.jsx use this pattern. */}
             <strong style={{ color: "#fff" }}>Every square includes a free shirt.</strong>{" "}
-            Once your purchase is confirmed we&apos;ll email you a short form to capture your size.
+            Once all {total}{" "}spaces are taken we&apos;ll produce the kit and email you a short form
+            to capture your size, then send yours as a thank-you.
           </div>
         </div>
         <div style={{ display: "flex", gap: 40, flexWrap: "wrap" }}>
