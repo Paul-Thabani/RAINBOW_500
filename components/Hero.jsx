@@ -48,7 +48,7 @@ export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
         <p style={{ fontSize: 18, lineHeight: 1.6, color: "#b9bac2", maxWidth: 500, margin: "0 0 30px" }}>
           One shirt, split into <strong style={{ color: "#fff" }}>{total} squares</strong>. Claim a square
           from <strong style={{ color: "#fff" }}>R{fmt(price)}</strong>, put your name, logo or doodle on the
-          kit - and get the shirt free.
+          kit, and receive a shirt as a thank-you once all {total} spaces have been taken.
         </p>
         <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 16, marginBottom: 22 }}>
           <button
@@ -149,8 +149,8 @@ export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
           }}
         >
           <img
-            src="/assets/top-shirt.png?v=3"
-            alt="The HBUFC The Goal is Love kit, front, showing how the shirt could look once every square is claimed"
+            src="/assets/kit-hero.png?v=1"
+            alt="The HBUFC The Goal is Love kit, showing how the shirt could look once every square is claimed"
             style={{ display: "block", width: "94%", height: "auto", margin: "0 auto" }}
           />
           <div
