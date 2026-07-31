@@ -6,16 +6,10 @@ import kitHero from "../public/assets/kit-hero-boxed.jpg";
 export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
   const left = total - claimed;
 
+  // Grid and padding live in .rb-hero because they change at 900px, and an
+  // inline style cannot hold a media query.
   return (
-    <section
-      style={{
-        display: "grid",
-        gridTemplateColumns: "1.05fr .95fr",
-        gap: 48,
-        alignItems: "center",
-        padding: "44px 0 56px",
-      }}
-    >
+    <section className="rb-hero">
       <div style={{ animation: "floatIn .5s ease both" }}>
         <div
           style={{
@@ -151,20 +145,24 @@ export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
             border: "1px solid #24405f",
           }}
         >
-          {/* This grid keeps both columns at every width, so the shirt is
-              nowhere near full-bleed on a phone: the right column is 47.5% of
-              the content box, which is about 121px at a 390px viewport against
-              497px on desktop. Telling the browser that is the whole point of
-              sizes, and it is what stops a phone pulling the desktop-width
-              file. 92px is the 44px container padding plus the 48px grid gap.
-              If a stacking breakpoint is ever added to this section, revisit
-              this hint (a wrong hint costs bytes, it cannot break layout).
+          {/* Three widths, because the hero now stacks at 900px (.rb-hero).
+              Above 1224px the container is capped and the right column is a
+              fixed 497px. Between 901 and 1223 it is still two columns, so 47.5%
+              of the content box, where 92px is the 44px container padding plus
+              the 48px grid gap. At 900 and below it is stacked and the shirt
+              takes the full content width.
+
+              This hint has to track the breakpoint: get it wrong and the phone
+              pulls a file sized for a column that no longer exists. It costs
+              bytes rather than breaking layout, but the whole point of the
+              image work was the bytes.
+
               The ?v=2 cache-buster is gone because the static import is
               content-hashed, so the URL changes whenever the file does. */}
           <Image
             src={kitHero}
             alt="The HBUFC The Goal is Love kit, showing how the shirt could look once every square is claimed"
-            sizes="(min-width: 1224px) 497px, calc((100vw - 92px) * 0.475)"
+            sizes="(min-width: 1224px) 497px, (min-width: 901px) calc((100vw - 92px) * 0.475), calc(100vw - 44px)"
             priority
             style={{ display: "block", width: "100%", height: "auto", margin: "0 auto", borderRadius: 16 }}
           />
