@@ -51,14 +51,23 @@ export default function Idea({ price, total }) {
               fontSize: "clamp(34px,5vw,58px)",
               fontWeight: 900,
               letterSpacing: "-.02em",
-              color: "#4a4a52",
+              // 2.08:1 before, the worst contrast on the page. The strikethrough is
+                // what says "this is the lesser number", so this does not also need
+                // to be near-invisible to make the point, and the two figures side
+                // by side are the clearest thing on the page for somebody who does
+                // not read much English. Still plainly subordinate: smaller than
+                // the R1,000,000, struck through, and dimmer than its 4.54:1
+                // rainbow.
+                color: "#6c6c73",
               textDecoration: "line-through",
             }}
           >
             R100,000
           </div>
         </div>
-        <div style={{ fontSize: 34, color: "#5a5a63", fontWeight: 900 }}>→</div>
+        {/* 2.68:1 before. The arrow carries the comparison, so it should be
+            readable even though it is not the point of the section. */}
+        <div style={{ fontSize: 34, color: "#6c6c74", fontWeight: 900 }}>→</div>
         <div>
           <div
             style={{
@@ -91,7 +100,7 @@ export default function Idea({ price, total }) {
       <p style={{ fontSize: 16, color: "#8b8b93", margin: "26px 0 0", fontWeight: 600 }}>
         Real money from real people, going straight to the players.
       </p>
-      <p style={{ fontSize: 14, color: "#6d6d76", margin: "10px 0 0", maxWidth: 560, lineHeight: 1.55 }}>
+      <p style={{ fontSize: 14, color: "#818188", margin: "10px 0 0", maxWidth: 560, lineHeight: 1.55 }}>
         The maths is simple: {fmt(total)} squares on one shirt, R{fmt(price)} each, no sponsor required.
       </p>
     </section>

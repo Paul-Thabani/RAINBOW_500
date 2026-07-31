@@ -19,7 +19,10 @@ function segStyle(active) {
     padding: "8px 14px",
     borderRadius: 999,
     background: active ? "#12151c" : "transparent",
-    color: active ? "#fff" : "#6b7280",
+    // The inactive label measured 3.91:1 on the #081120 pill. This is the
+    // control that picks what you are buying, so both halves have to be readable,
+    // not just the selected one.
+    color: active ? "#fff" : "#797f8c",
   };
 }
 

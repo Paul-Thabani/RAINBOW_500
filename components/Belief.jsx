@@ -81,7 +81,13 @@ export default function Belief() {
           }}
         >
           <span style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 5, background: RAINBOW_GRADIENT }} />
+          {/* Ornament, not content: the quote itself is #e7e7ea at 20px right below.
+              It measures 1.53:1, a contrast audit will flag it, and it should stay
+              that way. WCAG exempts pure decoration, and lifting it to 3:1 would put
+              a giant quote mark in competition with the sentence it decorates.
+              aria-hidden so it is not announced either. */}
           <div
+            aria-hidden="true"
             style={{
               fontSize: 60,
               lineHeight: 1,

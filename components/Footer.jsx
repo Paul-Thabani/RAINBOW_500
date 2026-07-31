@@ -79,7 +79,7 @@ export default function Footer() {
           marginTop: 24,
           fontSize: 12.5,
           lineHeight: 1.6,
-          color: "#6b7280",
+          color: "#7b828e",
           maxWidth: 720,
         }}
       >
