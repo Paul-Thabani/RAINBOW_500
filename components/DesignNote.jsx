@@ -45,8 +45,12 @@ export default function DesignNote() {
         </div>
         <div style={{ fontSize: 13.5, lineHeight: 1.5, fontWeight: 600, color: "#b9bac2" }}>
           One square is roughly <strong style={{ color: "#e7e7ea" }}>3 cm across</strong> on a medium shirt,
-          about the size of a postage stamp. The position of your logo, message, drawing or autograph may
-          shift slightly once printed. Everything else is exactly as shown.
+          about the size of a postage stamp. The kit is dye sublimated, which means your artwork is printed
+          as <strong style={{ color: "#e7e7ea" }}>white only</strong>: there is no white ink, so the white
+          is the fabric itself showing through and the colour is printed around it. Bold, simple shapes
+          come out best. Very thin lines and small lettering close up at this size, and colour, shading
+          and gradients cannot be reproduced. The position may shift slightly once printed. Everything
+          else is exactly as shown.
         </div>
       </div>
     </div>
