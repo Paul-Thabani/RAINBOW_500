@@ -37,9 +37,15 @@ create table if not exists squares (
   --             has run and Netcash is the authority on whether money moved.
   --   paid      confirmed. The only status that renders artwork on the shirt.
   --   failed    declined, or the amount did not match what we recorded.
-  --   cancelled terminal. Not resolvable by a later notify.
-  --   conflict  payment accepted but the cells had already gone. Needs a
-  --             manual refund, and nothing alerts anyone, so watch for it.
+  --   cancelled an admin cancelled it from /admin, releasing the cells. Not
+  --             resolvable back to paid: reviving an order a human cancelled
+  --             on purpose would undo their decision, and the cells may have
+  --             been resold since. A payment landing afterwards is still not
+  --             ignored, it becomes `conflict` and alerts. See the notify route.
+  --   conflict  payment accepted but there are no cells to give for it, either
+  --             because they had already gone or because the order was
+  --             cancelled first. Needs a manual refund. This one now emails
+  --             ADMIN_ALERT_EMAIL rather than only appearing in the log.
   status text not null default 'pending'
     check (status in ('pending', 'paid', 'failed', 'cancelled', 'expired', 'conflict')),
   pf_payment_id text,

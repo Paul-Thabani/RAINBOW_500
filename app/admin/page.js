@@ -1,6 +1,7 @@
 import { query } from "../../lib/db";
 import { fmt } from "../../lib/zones";
 import { RAINBOW_GRADIENT } from "../../lib/brand";
+import CancelOrderButton from "./CancelOrderButton";
 
 // Most recent orders to render. Abandoned checkouts accumulate a row each, so
 // this will eventually bite; the page says so explicitly rather than quietly
@@ -39,7 +40,10 @@ function groupByBlock(rows) {
         cells: [],
       });
     }
-    map.get(r.block_id).cells.push({ col: r.col, row: r.row, content: r.content });
+    // span matters for the cancel confirmation: a big 2x2 is a single row
+    // covering four cells, so counting rows would under-report what is about
+    // to be released.
+    map.get(r.block_id).cells.push({ col: r.col, row: r.row, span: r.span, content: r.content });
   });
   return [...map.values()].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
@@ -273,6 +277,7 @@ export default async function AdminPage() {
                 <th style={th}>Created</th>
                 <th style={th}>Paid at</th>
                 <th style={th}>Reference</th>
+                <th style={th}></th>
               </tr>
             </thead>
             <tbody>
@@ -304,11 +309,18 @@ export default async function AdminPage() {
                   <td style={{ ...td, color: "#6b7280", fontFamily: "ui-monospace,monospace", fontSize: 12 }}>
                     {o.reference}
                   </td>
+                  <td style={{ ...td, textAlign: "right" }}>
+                    <CancelOrderButton
+                      blockId={o.blockId}
+                      status={o.status}
+                      cellCount={o.cells.reduce((n, c) => n + (c.span || 1) ** 2, 0)}
+                    />
+                  </td>
                 </tr>
               ))}
               {orders.length === 0 && !loadError && (
                 <tr>
-                  <td colSpan={10} style={{ padding: "48px 16px", textAlign: "center", color: "#8b8b93" }}>
+                  <td colSpan={11} style={{ padding: "48px 16px", textAlign: "center", color: "#8b8b93" }}>
                     <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>No orders yet</div>
                     <div style={{ fontSize: 13 }}>Checkouts will show up here the moment someone starts one.</div>
                   </td>
