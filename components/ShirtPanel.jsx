@@ -51,7 +51,17 @@ function OpenCellMarkers({ zone, entries }) {
 function CellInner({ entry }) {
   const c = entry.content;
   const shadow = "drop-shadow(0 1px 1.5px rgba(0,0,0,.5))";
-  if (c && c.type === "image") {
+  // Two sources, one renderer. A square the visitor is still editing carries
+  // its image inline as `content.src`, because it only exists in this browser.
+  // A square already on the board carries `artUrl` instead, a per-square
+  // thumbnail the browser fetches once and caches for a year, which is what
+  // keeps the 25 second poll free of artwork.
+  //
+  // A paid image square with neither is one whose thumbnail has not been
+  // generated yet. It falls through to the plain claimed block below rather
+  // than rendering as a broken image.
+  const src = (c && c.src) || entry.artUrl;
+  if (c && c.type === "image" && src) {
     return (
       <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div
@@ -60,8 +70,8 @@ function CellInner({ entry }) {
             height: "94%",
             background: "#fff",
             filter: shadow,
-            WebkitMaskImage: `url(${c.src})`,
-            maskImage: `url(${c.src})`,
+            WebkitMaskImage: `url("${src}")`,
+            maskImage: `url("${src}")`,
             WebkitMaskSize: "contain",
             maskSize: "contain",
             WebkitMaskRepeat: "no-repeat",
