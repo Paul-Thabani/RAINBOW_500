@@ -21,6 +21,13 @@ import { cellKey } from "../../../../lib/zones";
 // their money without ever confirming their square. Everything else
 // (paid/failed/cancelled/conflict) is terminal, so a duplicate or replayed
 // notify can never flip a settled order.
+//
+// `cancelled` is the one an admin sets by hand from /admin. It stays out of
+// this list, because reviving an order a human deliberately cancelled would
+// undo their decision and the squares may already have been resold. It is
+// still handled rather than ignored: see the cancelled-then-paid branch below,
+// which routes it to `conflict` and alerts, so the money is never silently
+// swallowed.
 const RESOLVABLE = ["pending", "expired"];
 
 // Every physical cell a row covers. A "block of 4" bought as one big square
@@ -62,7 +69,11 @@ function detach(promiseFn) {
 // Settle every row of this order, but only if it is still resolvable. Doing the
 // status guard in the WHERE clause rather than in JS is what makes
 // first-notify-wins hold: two concurrent notifies cannot both match.
-async function settle(reference, status, requestTrace) {
+// `from` is the set of statuses this transition is allowed to move out of. It
+// defaults to RESOLVABLE, which is every ordinary case. The cancelled-then-paid
+// path passes its own, because `cancelled` must stay out of RESOLVABLE while
+// still being transitionable to conflict.
+async function settle(reference, status, requestTrace, from = RESOLVABLE) {
   const sql =
     status === "paid"
       ? `update squares
@@ -73,7 +84,7 @@ async function settle(reference, status, requestTrace) {
             set status = $3
           where m_payment_id = $1
             and status = any($2::text[])`;
-  const params = status === "paid" ? [reference, RESOLVABLE, requestTrace] : [reference, RESOLVABLE, status];
+  const params = status === "paid" ? [reference, from, requestTrace] : [reference, from, status];
   const { rowCount } = await query(sql, params);
   return rowCount;
 }
@@ -95,6 +106,36 @@ export async function POST(request) {
     if (rows.length === 0) {
       console.warn("Netcash notify: no squares found for reference", fields.reference);
       return new Response("OK", { status: 200 }); // acknowledge - nothing to do
+    }
+
+    // An admin cancelled this order from /admin and the buyer paid anyway,
+    // most likely because they were already on the Netcash payment page when
+    // the cancel landed.
+    //
+    // `cancelled` is deliberately NOT in RESOLVABLE. Reviving it would undo a
+    // decision a human made on purpose, and the squares may well have been
+    // resold in the meantime. But the money has moved, and Netcash is the
+    // authority on that, so this cannot be a silent 200 either: that is the
+    // exact shape of the bug the schema comments warn about for `expired`.
+    // Mark it conflict, which already means "paid, no squares, needs a human",
+    // and tell someone.
+    if (rows[0].status === "cancelled" && fields.accepted) {
+      console.error(
+        "Netcash notify: payment accepted for cancelled order",
+        fields.reference,
+        "- buyer paid after an admin cancelled it, needs a manual refund"
+      );
+      await settle(fields.reference, "conflict", null, ["cancelled"]);
+      detach(() =>
+        sendConflictAlert({
+          reference: fields.reference,
+          amount: fields.amount,
+          buyerEmail: rows[0].buyer_email,
+          squares: squareCount(rows),
+          cause: "buyer paid after an admin cancelled the order",
+        })
+      );
+      return new Response("OK", { status: 200 });
     }
 
     if (!RESOLVABLE.includes(rows[0].status)) {
@@ -160,10 +201,42 @@ export async function POST(request) {
     const updated = await settle(fields.reference, "paid", fields.requestTrace);
 
     if (updated === 0) {
-      // Another notify for this same reference resolved it between our read and
-      // our write. It won, and it applied the same guards, so there is nothing
-      // to do and nothing wrong.
-      console.warn("Netcash notify:", fields.reference, "was already settled concurrently");
+      // Something changed this order between our read and our write. Usually
+      // that is another notify for the same reference, which applied the same
+      // guards and won, so there is nothing to do and nothing wrong.
+      //
+      // But an admin cancelling from /admin lands in exactly the same place,
+      // and that case is not benign: the money moved and we have recorded no
+      // square for it. Read the status back rather than assuming which one it
+      // was.
+      const { rows: now } = await query(
+        `select distinct status from squares where m_payment_id = $1`,
+        [fields.reference]
+      );
+      const settledPaid = now.length === 1 && now[0].status === "paid";
+
+      if (settledPaid) {
+        console.warn("Netcash notify:", fields.reference, "was already settled concurrently");
+        return new Response("OK", { status: 200 });
+      }
+
+      console.error(
+        "Netcash notify: lost the race on",
+        fields.reference,
+        "- payment was accepted but the order is now",
+        now.map((r) => r.status).join("/") || "gone",
+        "- needs a manual refund or a manual confirm"
+      );
+      await settle(fields.reference, "conflict", null, ["cancelled", "expired", "pending"]);
+      detach(() =>
+        sendConflictAlert({
+          reference: fields.reference,
+          amount: expected,
+          buyerEmail: rows[0].buyer_email,
+          squares: squareCount(rows),
+          cause: `order changed to ${now.map((r) => r.status).join("/") || "gone"} while the payment was settling`,
+        })
+      );
       return new Response("OK", { status: 200 });
     }
 
