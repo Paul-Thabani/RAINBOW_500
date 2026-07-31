@@ -99,15 +99,23 @@ export default function KitSection({
             cursor: "pointer",
             fontFamily: "inherit",
             fontWeight: 800,
-            fontSize: 14,
+            fontSize: 13.5,
+            letterSpacing: ".01em",
             color: BUTTON_INK,
             background: BUTTON_SURFACE,
-            padding: "12px 20px",
+            padding: "10px 16px",
             borderRadius: 999,
             border: "none",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            whiteSpace: "nowrap",
           }}
         >
           Pick one for me
+          <span aria-hidden="true" style={{ fontSize: 15, lineHeight: 1, opacity: 0.85 }}>
+            &rarr;
+          </span>
         </button>
       </div>
 
