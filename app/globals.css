@@ -216,17 +216,21 @@ h2 {
   }
 }
 
-/* "Pick one for me" sits to the right of the size toggle on a wide screen. On a
-   phone it wraps onto its own line, where right-aligning it just leaves an odd
-   gap, so it goes full width instead. A wider primary button is also the point:
-   this is the button that exists because tapping a 16.5px square is hard. */
+/* "Pick one for me" sits to the right of the size toggle on a wide screen and
+   wraps onto its own line on a phone. Auto width and centred rather than full
+   bleed: a stretched bar reads as a banner, a contained pill reads as a button
+   you press. Prominence comes from the rainbow base rule and the arrow, not from
+   size. */
 .rb-pick-btn {
   margin-left: auto;
 }
 
 @media (max-width: 560px) {
   .rb-pick-btn {
-    flex: 1 1 100%;
-    margin-left: 0;
+    /* auto margins on both sides, not align-self: in a wrapping flex row
+       align-self controls the cross axis, so it does nothing horizontally. */
+    flex: 0 0 auto;
+    margin-left: auto;
+    margin-right: auto;
   }
 }
