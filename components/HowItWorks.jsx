@@ -39,7 +39,7 @@ export default function HowItWorks({ price, blockPrice }) {
       >
         Four steps to get on the shirt.
       </h2>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }}>
+      <div className="rb-grid-4" style={{ gap: 16 }}>
         {steps.map((s) => (
           <div key={s.n} style={{ background: "#10203a", border: "1px solid #24405f", borderRadius: 18, padding: 22 }}>
             <div

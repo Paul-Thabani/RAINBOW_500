@@ -12,10 +12,13 @@ export default function Belief() {
         marginBottom: 8,
       }}
     >
+      {/* Two columns above 900px, one below. Unstacked, the quote card on the
+          right was rendering its body copy at about two words per line down a
+          100px column on a phone. See .rb-two-col. */}
       <div
+        className="rb-two-col"
         style={{
-          display: "grid",
-          gridTemplateColumns: "1.1fr .9fr",
+          "--rb-cols": "1.1fr .9fr",
           gap: 40,
           alignItems: "center",
         }}

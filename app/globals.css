@@ -117,3 +117,101 @@ h2 {
     padding: 24px 0 40px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Responsive layout classes.
+
+   This page was built desktop-only: nine separate multi-column layouts were
+   hard-coded in inline styles with no breakpoint, so on a 390px phone the worst
+   of them (the belief quote) rendered its body copy at roughly two words per
+   line down a 100px column. 82% of this site's traffic is mobile.
+
+   Inline styles cannot hold a media query, so the column definition is the one
+   thing that moves out here. Each component keeps its own gap, padding and
+   colours inline. 900px throughout, matching .rb-hero and .rb-kit-panels, so
+   the page changes shape once on the way down rather than nine times.
+   --------------------------------------------------------------------------- */
+
+/* Two uneven columns that become one. The custom property lets each component
+   keep its own desktop ratio without needing a class of its own. */
+.rb-two-col {
+  display: grid;
+  grid-template-columns: var(--rb-cols, 1fr 1fr);
+}
+
+/* Card and stat rows. Four across is unreadable on a phone, two is fine. */
+.rb-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+.rb-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* Grid items default to min-width:auto, which means a track can never shrink
+   below its content's min-content width. That is why the pricing cards and the
+   stat rows still pushed the page 111px wider than a 390px phone even after
+   they had been given fewer columns: the columns were narrow, the cards simply
+   refused to fit in them. */
+.rb-two-col > *,
+.rb-grid-4 > *,
+.rb-grid-3 > * {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .rb-two-col {
+    grid-template-columns: 1fr;
+  }
+  .rb-grid-4,
+  .rb-grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .rb-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* The header row: logo, nav, and the join button. Unwrapped it pushed the
+   button off screen and squeezed the club name onto three lines, which was the
+   first thing every mobile visitor saw. Below 900 the logo takes its own line
+   and the nav sits under it. */
+.rb-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@media (max-width: 900px) {
+  .rb-header {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  .rb-header > * {
+    flex: 1 1 100%;
+  }
+  .rb-header-nav {
+    flex-wrap: wrap;
+    row-gap: 12px;
+  }
+}
+
+/* The soft glow behind the hero shirt is inset -12% -8%, which is fine inside a
+   517px desktop column but hangs 6px past the viewport once the hero stacks and
+   the column becomes full width. That was the last of the horizontal scroll.
+   Pulled to 0 horizontally on small screens, which is invisible because the
+   thing being trimmed is the transparent tail of a blurred gradient. */
+.rb-hero-glow {
+  position: absolute;
+  inset: -12% -8%;
+}
+
+@media (max-width: 900px) {
+  .rb-hero-glow {
+    inset: -12% 0;
+  }
+}

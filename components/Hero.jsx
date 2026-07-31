@@ -128,9 +128,8 @@ export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
       </div>
       <div style={{ position: "relative" }}>
         <div
+          className="rb-hero-glow"
           style={{
-            position: "absolute",
-            inset: "-12% -8%",
             background:
               "radial-gradient(circle at 50% 40%, rgba(228,31,145,.22), rgba(17,126,194,.14) 45%, transparent 70%)",
             filter: "blur(10px)",
