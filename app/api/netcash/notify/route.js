@@ -1,6 +1,6 @@
 import { query } from "../../../../lib/db";
 import { parseNotifyFields } from "../../../../lib/netcash";
-import { sendPaymentConfirmation } from "../../../../lib/mailer";
+import { sendPaymentConfirmation, sendConflictAlert } from "../../../../lib/mailer";
 import { cellKey } from "../../../../lib/zones";
 
 // Netcash calls this server-to-server once a Pay Now transaction resolves
@@ -33,6 +33,30 @@ function cellsOf(row) {
     for (let j = 0; j < span; j++) out.push(cellKey(row.zone_id, row.col + i, row.row + j));
   }
   return out;
+}
+
+// Every cell an order covers, so the receipt can say "4 squares" whether that
+// was four rows of span 1 or one big row of span 2.
+function squareCount(rows) {
+  return rows.reduce((n, r) => n + (r.span || 1) ** 2, 0);
+}
+
+// Deliberately not awaited.
+//
+// Tying a send to the response would lose receipts rather than protect them. If
+// the send were awaited and it ran slow, Netcash would time out and retry, the
+// retry would find the order already settled, take the `updated === 0` early
+// return, and never send anything at all. Detached, the first attempt runs to
+// completion after the callback has been acknowledged. That holds because this
+// is a long-lived process under pm2, not a serverless function that freezes on
+// response.
+//
+// The mailer never throws, but the call sits in a catch anyway so a future
+// change there can't surface as an unhandled rejection in a payment callback.
+function detach(promiseFn) {
+  Promise.resolve()
+    .then(promiseFn)
+    .catch((e) => console.error("Netcash notify: mail failed -", e.message));
 }
 
 // Settle every row of this order, but only if it is still resolvable. Doing the
@@ -121,6 +145,15 @@ export async function POST(request) {
         "- payment was accepted but the cells are taken, needs a manual refund"
       );
       await settle(fields.reference, "conflict");
+      detach(() =>
+        sendConflictAlert({
+          reference: fields.reference,
+          amount: expected,
+          buyerEmail: rows[0].buyer_email,
+          squares: squareCount(rows),
+          cause: "cell conflict found before settling",
+        })
+      );
       return new Response("OK", { status: 200 });
     }
 
@@ -142,18 +175,20 @@ export async function POST(request) {
       );
     }
 
-    // Best-effort: the payment is already settled above, so a mail outage
-    // must never turn into a failed/retried notify.
+    // Exactly one receipt per order. `updated` is only non-zero for the notify
+    // that actually flipped the rows to paid, so a duplicate or replayed
+    // callback returns above and never reaches this.
     if (rows[0].buyer_email) {
-      try {
-        await sendPaymentConfirmation({
+      detach(() =>
+        sendPaymentConfirmation({
           to: rows[0].buyer_email,
           reference: fields.reference,
-          amount: Number(rows[0].order_amount).toFixed(2),
-        });
-      } catch (e) {
-        console.error("Netcash notify: couldn't send confirmation email for", fields.reference, "-", e.message);
-      }
+          amount: expected,
+          squares: squareCount(rows),
+        })
+      );
+    } else {
+      console.warn("Netcash notify: no buyer_email on", fields.reference, "- no receipt sent");
     }
 
     return new Response("OK", { status: 200 });
@@ -172,6 +207,18 @@ export async function POST(request) {
       } catch (inner) {
         console.error("Netcash notify: couldn't even mark it conflict:", inner.message);
       }
+      // `rows` never made it into scope on this path, so the alert carries only
+      // what the callback itself told us. The reference is enough to find the
+      // order in /admin.
+      detach(() =>
+        sendConflictAlert({
+          reference: fields.reference,
+          amount: fields.amount,
+          buyerEmail: null,
+          squares: null,
+          cause: "unique index refused the write",
+        })
+      );
       return new Response("OK", { status: 200 });
     }
     // Anything else is transient as far as we know. Don't acknowledge: the
