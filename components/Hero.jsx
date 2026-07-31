@@ -47,8 +47,8 @@ export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
         </h1>
         <p style={{ fontSize: 18, lineHeight: 1.6, color: "#b9bac2", maxWidth: 500, margin: "0 0 30px" }}>
           One shirt, split into <strong style={{ color: "#fff" }}>{total} squares</strong>. Claim a square
-          from <strong style={{ color: "#fff" }}>R{fmt(price)}</strong>, put your name, logo or doodle on the
-          kit, and receive a shirt as a thank-you once all {total} spaces have been taken.
+          from <strong style={{ color: "#fff" }}>R{fmt(price)}</strong>, put your name, logo, doodle or
+          autograph on the kit, and receive a shirt as a thank-you once all {total} spaces have been taken.
         </p>
         <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 16, marginBottom: 22 }}>
           <button

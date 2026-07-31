@@ -48,7 +48,7 @@ export default function Pricing({ price, blockPrice }) {
             Renew each season to keep the same square
           </div>
           <div style={{ color: "#b9bac2", fontSize: 14, lineHeight: 1.55 }}>
-            Put your logo, a message, or a doodle in your square. It&apos;s yours to renew, season after
+            Put your logo, a message, a doodle or an autograph in your square. It&apos;s yours to renew, season after
             season.
           </div>
         </div>
