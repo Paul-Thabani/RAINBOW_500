@@ -116,6 +116,19 @@ export default function Belief() {
           </p>
         </div>
       </div>
+      <img
+        src="/assets/supporters.jpg"
+        alt="Hout Bay United supporters cheering from the stands, one leading chants with a megaphone"
+        style={{
+          display: "block",
+          width: "100%",
+          aspectRatio: "16 / 7",
+          objectFit: "cover",
+          objectPosition: "center 38%",
+          borderRadius: 18,
+          marginTop: 44,
+        }}
+      />
     </section>
   );
 }
