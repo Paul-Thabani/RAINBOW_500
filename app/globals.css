@@ -234,3 +234,45 @@ h2 {
     margin-right: auto;
   }
 }
+
+/* The other side of the shirt, as a thumbnail you press to swap. Sits over the
+   top right of the prominent panel. Small enough not to compete with it, big
+   enough to be an obvious tap target: 108px on a wide screen, 76px on a phone,
+   both comfortably past the 44px a finger needs. */
+.rb-shirt-switch {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 108px;
+  padding: 6px 6px 4px;
+  background: rgba(10, 21, 38, 0.82);
+  border: 1px solid #24405f;
+  border-radius: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  display: block;
+  backdrop-filter: blur(3px);
+}
+
+.rb-shirt-switch:hover {
+  border-color: #35507a;
+}
+
+.rb-shirt-switch-label {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #cfd0d6;
+  font-weight: 800;
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+  .rb-shirt-switch {
+    width: 76px;
+    top: 6px;
+    right: 6px;
+  }
+}
