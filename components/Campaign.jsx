@@ -58,6 +58,7 @@ export default function Campaign() {
         onHover={r.onHover}
         onLeave={r.onLeave}
         onPick={r.onPick}
+        pickForMe={r.pickForMe}
       />
 
       <Belief />

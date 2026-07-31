@@ -215,3 +215,18 @@ h2 {
     inset: -12% 0;
   }
 }
+
+/* "Pick one for me" sits to the right of the size toggle on a wide screen. On a
+   phone it wraps onto its own line, where right-aligning it just leaves an odd
+   gap, so it goes full width instead. A wider primary button is also the point:
+   this is the button that exists because tapping a 16.5px square is hard. */
+.rb-pick-btn {
+  margin-left: auto;
+}
+
+@media (max-width: 560px) {
+  .rb-pick-btn {
+    flex: 1 1 100%;
+    margin-left: 0;
+  }
+}
