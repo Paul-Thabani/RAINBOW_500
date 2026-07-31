@@ -1,5 +1,5 @@
 import { query } from "../../lib/db";
-import { fmt } from "../../lib/zones";
+import { fmt, zoneLabel } from "../../lib/zones";
 import { RAINBOW_GRADIENT } from "../../lib/brand";
 import CancelOrderButton from "./CancelOrderButton";
 
@@ -285,7 +285,7 @@ export default async function AdminPage() {
                 <tr key={o.blockId} className="rb-admin-row" style={{ borderBottom: "1px solid #1a3050" }}>
                   <td style={{ ...td, fontWeight: 700, color: "#eef1f6" }}>{o.buyerEmail || "-"}</td>
                   <td style={{ ...td, color: "#cfd0d6", fontVariantNumeric: "tabular-nums" }}>{o.buyerPhone || "-"}</td>
-                  <td style={{ ...td, color: "#cfd0d6" }}>{o.zoneId}</td>
+                  <td style={{ ...td, color: "#cfd0d6" }}>{zoneLabel(o.zoneId)}</td>
                   <td style={{ ...td, fontFamily: "ui-monospace,monospace", fontSize: 12.5, color: "#cfd0d6" }}>
                     {o.cells.map((c) => `(${c.col},${c.row})`).join(", ")}
                   </td>

@@ -6,6 +6,7 @@ import {
   validFoot,
   cellKey,
   pendingEntries,
+  zoneLabel,
   PRICE_PER_SPOT,
   BLOCK_PRICE,
 } from "../../../lib/zones";
@@ -75,7 +76,9 @@ export async function POST(request) {
     fields = buildPaymentFields({
       reference,
       amount: amount.toFixed(2),
-      description: `HBUFC Legacy 500 - ${zoneId} ${size === 4 ? "block of 4" : "square"}`.slice(0, 50),
+      // This string is what Netcash shows the buyer on the payment page, so it
+      // gets the human zone name, not the internal id. Pay Now caps it at 50.
+      description: `Legacy 500 - ${size === 4 ? "block of 4" : "1 square"}, ${zoneLabel(zoneId)}`.slice(0, 50),
       extra1: blockId,
     });
   } catch (e) {
