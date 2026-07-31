@@ -1,5 +1,6 @@
 import { query } from "../../../../lib/db";
 import { parseNotifyFields } from "../../../../lib/netcash";
+import { sendPaymentConfirmation } from "../../../../lib/mailer";
 import { cellKey } from "../../../../lib/zones";
 
 // Netcash calls this server-to-server once a Pay Now transaction resolves
@@ -61,7 +62,7 @@ export async function POST(request) {
 
   try {
     const { rows } = await query(
-      `select id, zone_id, col, "row", span, order_amount, status
+      `select id, zone_id, col, "row", span, order_amount, status, buyer_email
          from squares
         where m_payment_id = $1`,
       [fields.reference]
@@ -139,6 +140,20 @@ export async function POST(request) {
         fields.reference,
         "- buyer paid after the checkout window had passed, square confirmed"
       );
+    }
+
+    // Best-effort: the payment is already settled above, so a mail outage
+    // must never turn into a failed/retried notify.
+    if (rows[0].buyer_email) {
+      try {
+        await sendPaymentConfirmation({
+          to: rows[0].buyer_email,
+          reference: fields.reference,
+          amount: Number(rows[0].order_amount).toFixed(2),
+        });
+      } catch (e) {
+        console.error("Netcash notify: couldn't send confirmation email for", fields.reference, "-", e.message);
+      }
     }
 
     return new Response("OK", { status: 200 });

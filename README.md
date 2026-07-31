@@ -32,12 +32,19 @@ the browser that picked it.
    (see "Orders dashboard" below) with HTTP Basic Auth, and they are the only
    thing standing between the public internet and every buyer's contact
    details, so use a long random password.
-6. From this folder:
+6. Set `RESEND_API_KEY` in `.env.local` (from the Resend dashboard). This is
+   what sends the "payment successful" confirmation email once Netcash
+   confirms a payment (see `app/api/netcash/notify`). Set `RESEND_FROM` to an
+   address on a domain verified in Resend once you have one; until then it
+   falls back to Resend's shared `onboarding@resend.dev` for testing. If
+   `RESEND_API_KEY` is unset, orders still confirm as normal, the
+   confirmation email is just skipped and logged.
+7. From this folder:
    ```
    npm install
    npm run dev
    ```
-7. Open [http://localhost:3000](http://localhost:3000).
+8. Open [http://localhost:3000](http://localhost:3000).
 
 `db/schema.sql` is idempotent, so re-running it against an existing database is
 safe. There is no migration tool: schema changes are applied by hand.
