@@ -410,7 +410,7 @@ export default function EditorModal({
 
   const reserveLabel = ed.size === 4 ? `Reserve a block of 4 · R${fmt(blockPrice)}` : `Reserve a square · R${fmt(price)}`;
   const editorTitle = isDetailsStep ? "Your details" : isReviewStep ? "How it looks" : "Make it yours";
-  const previewHeading = isReviewStep ? "Your design on the shirt · hover to zoom in" : "Preview on shirt";
+  const previewHeading = isReviewStep ? "Your design on the shirt" : "Preview on shirt";
   const securePriceLabel = ed.size === 4 ? fmt(blockPrice) : fmt(price);
   const continueLabel = "Continue";
   const proceedLabel = isCheckingOut ? "Redirecting to payment..." : `Proceed to payment · R${securePriceLabel}`;
@@ -548,10 +548,10 @@ export default function EditorModal({
                   style={{ display: "flex", background: "#f0f1f4", border: "1px solid #e6e8ec", borderRadius: 12, padding: 4 }}
                 >
                   <button type="button" onClick={setBigFalse} aria-pressed={!ed.big} style={segMode(!ed.big)}>
-                    Four separate pieces
+                    Four separate squares
                   </button>
                   <button type="button" onClick={setBigTrue} aria-pressed={!!ed.big} style={segMode(ed.big)}>
-                    One big piece (4×)
+                    One big square (4 times)
                   </button>
                 </div>
               </div>
@@ -560,7 +560,7 @@ export default function EditorModal({
             {isFour && (
               <div style={{ padding: "16px 22px 0" }}>
                 <div id="rb-pieces-hint" style={{ fontSize: 12, color: "#6b7280", fontWeight: 700, marginBottom: 8 }}>
-                  Fill each of the four pieces (leave any blank if you like):
+                  Add something to each of the four squares. You can leave some empty.
                 </div>
                 <div role="group" aria-labelledby="rb-pieces-hint" style={{ display: "flex", gap: 8 }}>
                   {[0, 1, 2, 3].map((i) => (
@@ -708,7 +708,7 @@ export default function EditorModal({
                   />
                   <div id="square-message-hint" style={{ fontSize: 12, color: "#6b7280", margin: "8px 2px 12px", display: "flex", alignItems: "center", gap: 8 }}>
                     <span aria-hidden="true" style={{ width: 14, height: 14, borderRadius: "50%", background: "#fff", border: "1px solid #d4d7dd", flex: "none" }} />
-                    Up to 42 characters. Printed in white on the rainbow kit.
+                    Up to 42 letters. It is printed in white on the shirt.
                   </div>
                 </div>
               )}
@@ -720,7 +720,7 @@ export default function EditorModal({
         {isDetailsStep ? (
           <div style={{ padding: "18px 22px 6px" }}>
             <div style={{ fontSize: 13, color: "#6b7280", fontWeight: 600, marginBottom: 18 }}>
-              We&apos;ll use these to send your receipt and reach you about your square.
+              We use these to send your receipt, and to contact you about your square.
             </div>
             {/* htmlFor/id so the visible text is genuinely the field's
                 accessible name rather than just sitting above it, and
