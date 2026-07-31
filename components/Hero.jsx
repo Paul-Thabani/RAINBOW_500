@@ -145,7 +145,7 @@ export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
             position: "relative",
             background: "#10203a",
             borderRadius: 22,
-            padding: 18,
+            padding: 9,
             border: "1px solid #24405f",
           }}
         >
