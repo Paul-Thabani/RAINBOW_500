@@ -1,7 +1,7 @@
 import { fmt, zonesFor } from "../lib/useRainbow500";
 import ShirtPanel from "./ShirtPanel";
 import DesignNote from "./DesignNote";
-import { RAINBOW_GRADIENT } from "../lib/brand";
+import { RAINBOW_GRADIENT, BUTTON_SURFACE, BUTTON_INK } from "../lib/brand";
 
 const FRONT_ZONES = zonesFor("front");
 const BACK_ZONES = zonesFor("back");
@@ -31,6 +31,7 @@ export default function KitSection({
   onHover,
   onLeave,
   onPick,
+  pickForMe,
 }) {
   return (
     <section id="kit" style={{ padding: "64px 0 8px" }}>
@@ -56,8 +57,9 @@ export default function KitSection({
             Claim your square.
           </h2>
           <p style={{ margin: "10px 0 0", color: "#8b8b93", fontSize: 16, maxWidth: 560, lineHeight: 1.55 }}>
-            First choose one square or a block of four. Then tap an empty square on the shirt. Empty
-            squares have a dotted outline.
+            First choose one square or a block of four. Then either tap an empty square on the shirt,
+            or press <strong style={{ color: "#cfd0d6" }}>Pick one for me</strong> and we choose a free
+            one for you. Empty squares have a dotted outline.
           </p>
         </div>
       </div>
@@ -84,6 +86,29 @@ export default function KitSection({
             Block of 4 · R{fmt(blockPrice)}
           </button>
         </div>
+
+        {/* The other way in. Hunting for a specific 16.5 x 9.5 px square is a
+            poor primary path on a phone, and most buyers do not mind which
+            square they get. This picks a free one at random and opens the
+            editor on it, so the tiny target stops being the only route. */}
+        <button
+          type="button"
+          onClick={pickForMe}
+          className="rb-pick-btn"
+          style={{
+            cursor: "pointer",
+            fontFamily: "inherit",
+            fontWeight: 800,
+            fontSize: 14,
+            color: BUTTON_INK,
+            background: BUTTON_SURFACE,
+            padding: "12px 20px",
+            borderRadius: 999,
+            border: "none",
+          }}
+        >
+          Pick one for me
+        </button>
       </div>
 
       {/* Only rendered on a device with no hover, so it never shows on desktop.
