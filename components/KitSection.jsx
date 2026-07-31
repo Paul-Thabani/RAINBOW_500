@@ -1,4 +1,7 @@
-import { fmt, zonesFor } from "../lib/useRainbow500";
+"use client";
+
+import { useMemo, useState } from "react";
+import { fmt, zonesFor, occSetFrom, availableSpots, getZone } from "../lib/useRainbow500";
 import ShirtPanel from "./ShirtPanel";
 import DesignNote from "./DesignNote";
 import { RAINBOW_GRADIENT, BUTTON_SURFACE, BUTTON_INK } from "../lib/brand";
@@ -33,6 +36,17 @@ export default function KitSection({
   onPick,
   pickForMe,
 }) {
+  // null means "follow the shirt": the front leads until it is full, then the
+  // back does. Once somebody presses the switch their choice sticks.
+  const [chosen, setChosen] = useState(null);
+  const frontHasRoom = useMemo(() => {
+    const occ = occSetFrom(reserved);
+    return availableSpots(occ, 1).some((sp) => getZone(sp.zoneId)?.panel === "front");
+  }, [reserved]);
+  const main = chosen ?? (frontHasRoom ? "front" : "back");
+  const other = main === "front" ? "back" : "front";
+  const setMain = setChosen;
+
   return (
     <section id="kit" style={{ padding: "64px 0 8px" }}>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginBottom: 22 }}>
@@ -129,36 +143,42 @@ export default function KitSection({
         Pinch to zoom in on the shirt, then tap the square you want.
       </p>
 
-      {/* Was capped at 900px inside a 1136px content box, which threw away a
-          quarter of the available width on a wide screen and made every logo
-          smaller than it had to be. Now it uses the full column. */}
-      <div style={{ margin: "0 auto" }}>
-        {/* Stacks below 900px, see .rb-kit-panels. Inline styles cannot hold a
-            media query, so this one has to be a class. */}
-        <div className="rb-kit-panels">
+      {/* One shirt at a time, the other as a thumbnail you press to swap.
+          Side by side, each shirt got half the width and every square with it.
+          One prominent panel is about 700px on a wide screen against 560px, so a
+          square goes from 18.6px to roughly 23px, and on a phone there is half
+          as much to scroll past. */}
+      <div style={{ position: "relative", maxWidth: 700, margin: "0 auto" }}>
+        <ShirtPanel
+          zones={main === "front" ? FRONT_ZONES : BACK_ZONES}
+          src={main === "front" ? "/assets/kit-customise.png" : "/assets/kit-back.png"}
+          label={main === "front" ? "Front of the shirt" : "Back of the shirt"}
+          reserved={reserved}
+          interactive
+          hover={hover}
+          onHover={onHover}
+          onLeave={onLeave}
+          onPick={onPick}
+        />
+
+        {/* Not interactive: no open-square markers and no picking, so there is
+            only ever one grid you can claim from and no doubt about which shirt
+            a tap applies to. Claimed squares still show, so you can watch the
+            other side filling up. */}
+        <button
+          type="button"
+          onClick={() => setMain(other)}
+          className="rb-shirt-switch"
+          aria-label={`Show the ${other} of the shirt`}
+        >
           <ShirtPanel
-            zones={FRONT_ZONES}
-            src="/assets/kit-customise.png"
-            label="Front"
+            zones={other === "front" ? FRONT_ZONES : BACK_ZONES}
+            src={other === "front" ? "/assets/kit-customise.png" : "/assets/kit-back.png"}
             reserved={reserved}
-            interactive
-            hover={hover}
-            onHover={onHover}
-            onLeave={onLeave}
-            onPick={onPick}
+            interactive={false}
           />
-          <ShirtPanel
-            zones={BACK_ZONES}
-            src="/assets/kit-back.png"
-            label="Back"
-            reserved={reserved}
-            interactive
-            hover={hover}
-            onHover={onHover}
-            onLeave={onLeave}
-            onPick={onPick}
-          />
-        </div>
+          <span className="rb-shirt-switch-label">{other === "front" ? "Front" : "Back"}</span>
+        </button>
       </div>
 
       <DesignNote />
