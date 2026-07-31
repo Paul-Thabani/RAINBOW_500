@@ -75,7 +75,7 @@ export async function POST(request) {
     fields = buildPaymentFields({
       reference,
       amount: amount.toFixed(2),
-      description: `HBUFC Rainbow 500 - ${zoneId} ${size === 4 ? "block of 4" : "square"}`.slice(0, 50),
+      description: `HBUFC Legacy 500 - ${zoneId} ${size === 4 ? "block of 4" : "square"}`.slice(0, 50),
       extra1: blockId,
     });
   } catch (e) {

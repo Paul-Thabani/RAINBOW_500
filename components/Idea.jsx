@@ -70,7 +70,7 @@ export default function Idea({ price, total }) {
               marginBottom: 6,
             }}
           >
-            The Rainbow 500 raises
+            The Legacy 500 raises
           </div>
           <div
             style={{

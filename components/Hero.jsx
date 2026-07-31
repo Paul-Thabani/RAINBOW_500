@@ -41,7 +41,7 @@ export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
             textTransform: "uppercase",
           }}
         >
-          Rainbow
+          Legacy
           <br />
           500
         </h1>
@@ -157,30 +157,30 @@ export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
           <div
             style={{
               textAlign: "center",
-              marginTop: 12,
-              fontSize: 11,
-              color: "#8b8b93",
-              letterSpacing: ".14em",
-              textTransform: "uppercase",
-              fontWeight: 700,
+              marginTop: 14,
+              fontSize: 16,
+              color: "#e7e7ea",
+              fontWeight: 800,
+              letterSpacing: "-.01em",
             }}
           >
-            The 2026/27 shirt
+            This is a legacy shirt.
           </div>
-          {/* This is the mockup of the filled shirt, so the caption belongs
-              here rather than over the interactive board. It replaces "the
-              finished vision", which said the same thing less clearly. */}
+          {/* The legacy narrative lives with the shirt mockup: your square is a
+              permanent place on the kit, so the promise belongs next to it. */}
           <div
             style={{
               textAlign: "center",
-              marginTop: 7,
-              fontSize: 12.5,
-              lineHeight: 1.45,
+              fontSize: 13.5,
+              lineHeight: 1.5,
               color: "#8b8b93",
               fontWeight: 600,
+              maxWidth: 440,
+              margin: "7px auto 0",
             }}
           >
-            A preview of how the shirt could look once all {total} spots are claimed.
+            Renew your spot season after season and keep your place on the shirt forever, claiming a
+            permanent part of the fabric of our community.
           </div>
         </div>
       </div>

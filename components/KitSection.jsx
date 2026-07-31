@@ -50,18 +50,14 @@ export default function KitSection({
             }}
           >
             <span style={{ width: 26, height: 3, borderRadius: 2, background: RAINBOW_GRADIENT }} />
-            Join the Rainbow 500
+            Join the Legacy 500
           </div>
-          <p style={{ margin: "0 0 8px", color: "#e7e7ea", fontSize: 18, fontWeight: 800, letterSpacing: "-.01em" }}>
-            This is a legacy shirt.
-          </p>
           <h2 style={{ fontSize: "clamp(28px,4vw,50px)", fontWeight: 900, margin: 0, letterSpacing: "-.02em", textTransform: "uppercase", lineHeight: 1.02 }}>
             Claim your square.
           </h2>
           <p style={{ margin: "10px 0 0", color: "#8b8b93", fontSize: 16, maxWidth: 560, lineHeight: 1.55 }}>
-            Renew your spot season after season and keep your place on the shirt forever, claiming a
-            permanent part of the fabric of our community. Choose a single square or a block of four,
-            then click an open place on the shirt to make it yours.
+            Choose a single square or a block of four, then click an open place on the shirt to make
+            it yours.
           </p>
         </div>
       </div>

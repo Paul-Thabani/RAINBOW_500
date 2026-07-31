@@ -74,7 +74,7 @@ export default function FinalAsk({ onJoin, price }) {
               borderRadius: 999,
             }}
           >
-            Join the Rainbow 500 · R{fmt(price)}
+            Join the Legacy 500 · R{fmt(price)}
           </button>
         </div>
       </div>
