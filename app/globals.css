@@ -51,3 +51,49 @@ h2 {
     transform: translate(-50%, 0);
   }
 }
+
+/* ---------------------------------------------------------------------------
+   The first media queries in this file. Everything else is inline styles, which
+   cannot express a breakpoint, so anything responsive has to live here and be
+   applied by class name.
+   --------------------------------------------------------------------------- */
+
+/* Front and back shirts: side by side on a wide screen, stacked on a phone.
+   Side by side, each shirt got half of a 331px container at 375px, so the
+   clickable grid was 75px wide and a single square measured about 7.5 x 4.3px.
+   A finger needs roughly 44px. Since 82% of this site's traffic is mobile, that
+   made the primary conversion action unusable for four visitors in five.
+   Stacking gives each shirt the full width, which roughly doubles every square
+   in both directions. */
+.rb-kit-panels {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+/* 900px, not a phone breakpoint. The container maxes out at 900px, so below
+   that a side-by-side pair is always smaller than a stacked one: stacking is
+   the better tap target at every width narrower than the full layout. Measured
+   at 375px it is 15.8 x 9 stacked against 7.5 x 4.3 side by side, and at 900px
+   it is about 41px against 20px. Above 900 the approved desktop presentation of
+   front and back together is kept. */
+@media (max-width: 900px) {
+  .rb-kit-panels {
+    flex-direction: column;
+    gap: 30px;
+  }
+}
+
+/* Squares are still small on a phone even stacked, and pinch-zoom is the way
+   through. The viewport allows it (no user-scalable=no), but nothing told
+   anyone, and there is no hover state on touch to hint that the grid is
+   interactive at all. Shown only where hover genuinely does not exist. */
+.rb-touch-hint {
+  display: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .rb-touch-hint {
+    display: block;
+  }
+}

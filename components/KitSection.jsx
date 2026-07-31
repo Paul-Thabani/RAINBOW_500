@@ -86,8 +86,20 @@ export default function KitSection({
         </div>
       </div>
 
+      {/* Only rendered on a device with no hover, so it never shows on desktop.
+          Touch users get no hover highlight at all, which left the grid with no
+          affordance saying it could be tapped. See .rb-touch-hint. */}
+      <p
+        className="rb-touch-hint"
+        style={{ margin: "0 0 14px", color: "#8b8b93", fontSize: 14, lineHeight: 1.5, textAlign: "center" }}
+      >
+        Pinch to zoom in on the shirt, then tap the square you want.
+      </p>
+
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
-        <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+        {/* Stacks below 720px, see .rb-kit-panels. Inline styles cannot hold a
+            media query, so this one has to be a class. */}
+        <div className="rb-kit-panels">
           <ShirtPanel
             zones={FRONT_ZONES}
             src="/assets/kit-customise.png"

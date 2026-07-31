@@ -185,7 +185,9 @@ export function RegionOverlay({ zone, reserved, extra, hi, interactive, hover, o
           onMouseMove={(e) => onHover(zone.id, e)}
           onMouseLeave={onLeave}
           onClick={(e) => onPick(zone.id, e)}
-          style={{ position: "absolute", inset: 0, zIndex: 5, cursor: "crosshair" }}
+          // pointer, not crosshair. A crosshair reads as a drawing tool, and
+          // this is "choose one of these".
+          style={{ position: "absolute", inset: 0, zIndex: 5, cursor: "pointer" }}
         />
       )}
     </div>
