@@ -66,8 +66,11 @@ function CellInner({ entry }) {
       <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div
           style={{
-            width: "94%",
-            height: "94%",
+            // 100%, not 94%: the wrapper's 1px padding is already the gap
+            // between neighbouring squares, so the extra inset was just making
+            // every logo smaller than it needed to be.
+            width: "100%",
+            height: "100%",
             background: "#fff",
             filter: shadow,
             WebkitMaskImage: `url("${src}")`,
@@ -112,7 +115,9 @@ function CellInner({ entry }) {
       </div>
     );
   }
-  return <div style={{ width: "100%", height: "100%", borderRadius: 2, boxShadow: "inset 0 0 0 1px rgba(255,255,255,.6)" }} />;
+  // No ring here: the wrapper in RegionOverlay frames every claimed square,
+  // including this one, so drawing a second would double the line.
+  return <div style={{ width: "100%", height: "100%", borderRadius: 2 }} />;
 }
 
 export function RegionOverlay({ zone, reserved, extra, hi, interactive, hover, onHover, onLeave, onPick }) {
@@ -147,6 +152,12 @@ export function RegionOverlay({ zone, reserved, extra, hi, interactive, hover, o
               padding: 1,
               boxSizing: "border-box",
               zIndex: 1,
+              // Every claimed square is framed, not just the ones with no
+              // artwork. Without this a sold square with a logo on it was the
+              // artwork floating on bare fabric, so a filling shirt read as
+              // scattered dots rather than a mosaic closing up.
+              borderRadius: 3,
+              boxShadow: "inset 0 0 0 1.25px rgba(255,255,255,.85)",
             }}
           >
             <CellInner entry={e} />
