@@ -56,8 +56,8 @@ export default function KitSection({
             Claim your square.
           </h2>
           <p style={{ margin: "10px 0 0", color: "#8b8b93", fontSize: 16, maxWidth: 560, lineHeight: 1.55 }}>
-            Choose a single square or a block of four, then click an open place on the shirt to make
-            it yours.
+            First choose one square or a block of four. Then tap an empty square on the shirt. Empty
+            squares have a dotted outline.
           </p>
         </div>
       </div>
@@ -75,7 +75,7 @@ export default function KitSection({
           marginBottom: 16,
         }}
       >
-        <span style={{ fontWeight: 800, color: "#e7e7ea", fontSize: 15 }}>Reserve:</span>
+        <span style={{ fontWeight: 800, color: "#e7e7ea", fontSize: 15 }}>Choose:</span>
         <div style={{ display: "inline-flex", background: "#081120", border: "1px solid #24405f", borderRadius: 999, padding: 4 }}>
           <button type="button" onClick={setSize1} style={segStyle(spotSize === 1)}>
             1 square · R{fmt(price)}
@@ -97,7 +97,7 @@ export default function KitSection({
       </p>
 
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
-        {/* Stacks below 720px, see .rb-kit-panels. Inline styles cannot hold a
+        {/* Stacks below 900px, see .rb-kit-panels. Inline styles cannot hold a
             media query, so this one has to be a class. */}
         <div className="rb-kit-panels">
           <ShirtPanel
