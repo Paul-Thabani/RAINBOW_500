@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { query } from "../../../lib/db";
+import { artMeta, makeThumb } from "../../../lib/artwork.mjs";
 import { buildPaymentFields, generateReference, NETCASH_PROCESS_URL } from "../../../lib/netcash";
 import {
   getZone,
@@ -24,6 +25,8 @@ const INSERT_COLUMNS = [
   "span",
   "big",
   "content",
+  "content_thumb",
+  "content_meta",
   "fill",
   "order_amount",
   "buyer_email",
@@ -49,8 +52,9 @@ export async function POST(request) {
   }
   // The browser resizes/re-encodes logos before upload, so this should never
   // trip in normal use - it's a backstop against a client that skips that
-  // step, since `content` is stored as-is in Postgres and re-sent in full to
-  // every visitor polling GET /api/squares for as long as the square is paid.
+  // step. `content` is stored as-is in Postgres because it is the file that
+  // gets printed on the shirt, so it is deliberately still allowed to be big;
+  // what it no longer does is ride along in every poll of GET /api/squares.
   const MAX_CONTENT_LENGTH = 2_000_000; // data URL length, ~2MB
   if (slots.some((s) => s && s.type === "image" && typeof s.src === "string" && s.src.length > MAX_CONTENT_LENGTH)) {
     return Response.json({ error: "That image is too large, please use a smaller file" }, { status: 400 });
@@ -134,8 +138,26 @@ export async function POST(request) {
     // already the single source of truth here.
     const entries = pendingEntries({ zoneId, col, row, size, big, slots });
 
+    // The board's copy is made here, once, instead of the print-resolution file
+    // going out on all 144 polls an open tab makes an hour. `content` keeps the original
+    // exactly as uploaded; content_thumb is the ~96px WebP the shirt renders
+    // and content_meta is everything about the slot except the bytes.
+    //
+    // makeThumb never throws. A square whose artwork sharp cannot read still
+    // sells, it just draws as a plain claimed block until someone looks at it,
+    // which is a far better outcome than failing a R2,000 payment over a
+    // thumbnail. At most four small images per order, so the added latency sits
+    // well inside the time it takes to hand off to Netcash.
+    const prepared = await Promise.all(
+      entries.map(async (e) => ({
+        ...e,
+        contentThumb: await makeThumb(e.content),
+        contentMeta: artMeta(e.content),
+      }))
+    );
+
     const values = [];
-    const tuples = entries.map((e) => {
+    const tuples = prepared.map((e) => {
       const placeholders = [
         blockId,
         reference,
@@ -145,6 +167,8 @@ export async function POST(request) {
         e.span,
         !!big,
         e.content ?? null,
+        e.contentThumb,
+        e.contentMeta,
         e.fill,
         amount,
         buyerEmail,

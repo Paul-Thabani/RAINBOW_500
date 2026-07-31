@@ -53,6 +53,31 @@ create table if not exists squares (
   paid_at timestamptz
 );
 
+-- Board rendering data, split out from `content` so the shirt's poll never has
+-- to carry a print-resolution image.
+--
+-- `content` holds the file the buyer paid to have printed and is left exactly
+-- as it was: full resolution, up to about 900KB of base64. It used to be sent
+-- to every visitor every 25 seconds by GET /api/squares, which at 500 sold
+-- squares is roughly 110MB per poll per open tab.
+--
+--   content_thumb  a ~96px WebP of the same artwork, built once at checkout by
+--                  lib/artwork.mjs. Single-digit KB, and the only version the
+--                  board ever loads. Null for a text-only square, and null if
+--                  sharp could not read the upload, in which case the square
+--                  falls back to a plain claimed block.
+--   content_meta   `content` with the base64 `src` removed, so the type, the
+--                  message text and the colour can travel in the poll while the
+--                  bytes do not.
+--
+-- Both are populated for pending rows too, but the claimed_squares view below
+-- still withholds them until the row is paid.
+--
+-- Existing rows predate these columns: run scripts/backfill-thumbnails.mjs once
+-- after applying this file, or already-sold squares render as blank blocks.
+alter table squares add column if not exists content_thumb bytea;
+alter table squares add column if not exists content_meta jsonb;
+
 create index if not exists squares_zone_cell_idx on squares (zone_id, col, "row");
 create index if not exists squares_block_idx on squares (block_id);
 create index if not exists squares_status_idx on squares (status);
@@ -88,17 +113,37 @@ create unique index if not exists squares_no_double_claim on squares
 -- older than 20 minutes is treated as abandoned and drops back out; see the
 -- checkout route's lazy sweep, which needs no cron.
 --
--- `content` is exposed only once paid. An in-progress square renders as a
--- neutral block, so artwork from a checkout that is never paid for is never
--- published.
-create or replace view claimed_squares as
+-- Artwork is exposed only once paid, exactly as before. An in-progress square
+-- renders as a neutral block, so artwork from a checkout that is never paid for
+-- is never published. The paid gate now covers content_meta and has_art, which
+-- are the only two artwork columns that leave this view at all.
+--
+-- The full `content` is deliberately absent. It is not merely dropped by the
+-- route: it never crosses this view, so the polled response cannot regrow a
+-- print-resolution payload by accident. Full artwork for a paid square is
+-- served one square at a time, cacheably, by
+-- GET /api/square/[squareId]/art, which re-checks `paid` itself.
+--
+-- `id` is exposed because it is how the board addresses a square's thumbnail.
+-- It is a random uuid over already-public artwork, same as block_id.
+--
+-- Recreated rather than replaced: `create or replace view` cannot change a
+-- view's column list, and this one gained id and has_art and lost content.
+-- Wrapped in a transaction so the live site never sees the view missing.
+begin;
+
+drop view if exists claimed_squares;
+
+create view claimed_squares as
   select
+    id,
     zone_id,
     col,
     "row",
     span,
     big,
-    case when status = 'paid' then content else null end as content,
+    case when status = 'paid' then content_meta else null end as content_meta,
+    (status = 'paid' and content_thumb is not null) as has_art,
     fill,
     block_id,
     order_amount,
@@ -106,3 +151,5 @@ create or replace view claimed_squares as
   from squares
   where status = 'paid'
      or (status = 'pending' and created_at > now() - interval '20 minutes');
+
+commit;
