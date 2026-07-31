@@ -753,7 +753,8 @@ export default function EditorModal({
         {isDetailsStep ? (
           <div style={{ padding: "18px 22px 6px" }}>
             <div style={{ fontSize: 13, color: "#6b7280", fontWeight: 600, marginBottom: 18 }}>
-              We use these to send your receipt, and to contact you about your square.
+              We use these to send your receipt, and to contact you about your square. You
+              will not need to type them again on the payment page.
             </div>
             {/* htmlFor/id so the visible text is genuinely the field's
                 accessible name rather than just sitting above it, and

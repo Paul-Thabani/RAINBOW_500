@@ -84,6 +84,10 @@ export async function POST(request) {
       // gets the human zone name, not the internal id. Pay Now caps it at 50.
       description: `Legacy 500 - ${size === 4 ? "block of 4" : "1 square"}, ${zoneLabel(zoneId)}`.slice(0, 50),
       extra1: blockId,
+        // Already collected and validated above, so Netcash can prefill its form
+        // rather than asking for them a second time.
+        email: buyerEmail,
+        mobile: buyerPhone,
     });
   } catch (e) {
     console.error("POST /api/checkout:", e.message);
