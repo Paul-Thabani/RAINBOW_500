@@ -1,4 +1,6 @@
+import Image from "next/image";
 import { fmt } from "../lib/useRainbow500";
+import deckPlayer from "../public/assets/deck-player.jpg";
 
 export default function FinalAsk({ onJoin, price }) {
   return (
@@ -15,10 +17,19 @@ export default function FinalAsk({ onJoin, price }) {
       }}
     >
       <div style={{ position: "relative", minHeight: 420 }}>
-        <img
-          src="/assets/deck-player.jpg"
+        {/* fill supplies position/inset/width/height itself, so only the fit
+            and focal point stay here. The parent is already position:relative.
+            sizes is deliberately wider than the box: the column is narrow and
+            tall (about 131px wide on a phone, but 420px or more high) and
+            object-fit cover scales to the larger axis, so a hint based on width
+            alone would under-request and the crop would come out soft. Last
+            section on the page, so it stays lazy. */}
+        <Image
+          src={deckPlayer}
           alt="HBUFC coach with the club corner flag, crest and rainbow ring visible"
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "58% 42%" }}
+          fill
+          sizes="(min-width: 1224px) 480px, 50vw"
+          style={{ objectFit: "cover", objectPosition: "58% 42%" }}
         />
         <div
           style={{

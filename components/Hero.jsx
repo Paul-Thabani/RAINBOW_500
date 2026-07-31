@@ -1,5 +1,7 @@
+import Image from "next/image";
 import { fmt } from "../lib/useRainbow500";
 import { RAINBOW_GRADIENT, RAINBOW_SURFACE, RAINBOW_SURFACE_INK } from "../lib/brand";
+import kitHero from "../public/assets/kit-hero-boxed.jpg";
 
 export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
   const left = total - claimed;
@@ -149,9 +151,21 @@ export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
             border: "1px solid #24405f",
           }}
         >
-          <img
-            src="/assets/kit-hero-boxed.jpg?v=2"
+          {/* This grid keeps both columns at every width, so the shirt is
+              nowhere near full-bleed on a phone: the right column is 47.5% of
+              the content box, which is about 121px at a 390px viewport against
+              497px on desktop. Telling the browser that is the whole point of
+              sizes, and it is what stops a phone pulling the desktop-width
+              file. 92px is the 44px container padding plus the 48px grid gap.
+              If a stacking breakpoint is ever added to this section, revisit
+              this hint (a wrong hint costs bytes, it cannot break layout).
+              The ?v=2 cache-buster is gone because the static import is
+              content-hashed, so the URL changes whenever the file does. */}
+          <Image
+            src={kitHero}
             alt="The HBUFC The Goal is Love kit, showing how the shirt could look once every square is claimed"
+            sizes="(min-width: 1224px) 497px, calc((100vw - 92px) * 0.475)"
+            priority
             style={{ display: "block", width: "100%", height: "auto", margin: "0 auto", borderRadius: 16 }}
           />
           <div
