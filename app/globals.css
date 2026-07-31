@@ -98,6 +98,19 @@ h2 {
   }
 }
 
+/* The mirror of .rb-touch-hint: text that is only true when there is a real
+   pointer. The review step magnifies on hover, which is worth telling somebody
+   about, but only if they have something to hover with. */
+.rb-hover-hint {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .rb-hover-hint {
+    display: inline;
+  }
+}
+
 /* The hero was a two column grid at every width, so on a 390px phone the copy
    and the shirt each got roughly half of a 346px content box and the kit
    rendered about 121px wide. Same breakpoint as .rb-kit-panels so the page

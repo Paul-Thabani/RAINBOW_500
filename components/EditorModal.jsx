@@ -198,32 +198,28 @@ function PreviewGrid({ ed }) {
   );
 }
 
+// Only the side the square is actually on.
+//
+// This step exists so somebody can confirm their artwork is in the right place
+// before paying, and it was spending half its width on the shirt their square is
+// not on. Measured at 390px, that left the buyer's own square 6.16px across.
+// One panel at full width roughly doubles it, and the side is now named, because
+// "which of these two am I looking at" is not a question this step should raise.
 function ReviewRow({ editor, reserved, hi }) {
   const extra = pendingEntries(editor);
+  const panel = getZone(editor.zoneId)?.panel === "back" ? "back" : "front";
+  const zones = panel === "back" ? BACK_ZONES : FRONT_ZONES;
   return (
-    <div style={{ display: "flex", gap: 10 }}>
-      <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
-        <img
-          src="/assets/kit-customise.png"
+    <div style={{ position: "relative" }}>
+      <img
+          src={panel === "back" ? "/assets/kit-back.png" : "/assets/kit-customise.png"}
           alt=""
           draggable={false}
           style={{ display: "block", width: "100%", height: "auto", userSelect: "none", pointerEvents: "none" }}
         />
-        {FRONT_ZONES.map((zone) => (
-          <RegionOverlay key={zone.id} zone={zone} reserved={reserved} extra={extra} hi={hi} />
-        ))}
-      </div>
-      <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
-        <img
-          src="/assets/kit-back.png"
-          alt=""
-          draggable={false}
-          style={{ display: "block", width: "100%", height: "auto", userSelect: "none", pointerEvents: "none" }}
-        />
-        {BACK_ZONES.map((zone) => (
-          <RegionOverlay key={zone.id} zone={zone} reserved={reserved} extra={extra} hi={hi} />
-        ))}
-      </div>
+      {zones.map((zone) => (
+        <RegionOverlay key={zone.id} zone={zone} reserved={reserved} extra={extra} hi={hi} />
+      ))}
     </div>
   );
 }
@@ -232,8 +228,10 @@ function ReviewKit({ editor, reserved, reviewLens, onReviewMove, onReviewLeave }
   const ZOOM = 3.2;
   const LENS = 180;
   const hi = { zoneId: editor.zoneId, col: editor.col, row: editor.row, span: editor.size === 4 ? 2 : 1 };
+  const onBack = getZone(editor.zoneId)?.panel === "back";
 
   return (
+    <>
     <div
       onMouseMove={onReviewMove}
       onMouseLeave={onReviewLeave}
@@ -279,6 +277,32 @@ function ReviewKit({ editor, reserved, reviewLens, onReviewMove, onReviewLeave }
         </div>
       )}
     </div>
+    <div
+      style={{
+        textAlign: "center",
+        marginTop: 7,
+        fontSize: 11,
+        letterSpacing: ".14em",
+        textTransform: "uppercase",
+        color: "#6b7280",
+        fontWeight: 800,
+      }}
+    >
+      {onBack ? "Back of the shirt" : "Front of the shirt"}
+    </div>
+    <div
+      style={{
+        textAlign: "center",
+        marginTop: 4,
+        fontSize: 12.5,
+        color: "#6b7280",
+        lineHeight: 1.45,
+      }}
+    >
+      Your square is the one with the white ring.
+      <span className="rb-hover-hint"> Move your pointer over the shirt to zoom in.</span>
+    </div>
+    </>
   );
 }
 
