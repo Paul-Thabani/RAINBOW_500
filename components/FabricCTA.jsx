@@ -1,4 +1,4 @@
-import { RAINBOW_GRADIENT } from "../lib/brand";
+import { RAINBOW_GRADIENT, RAINBOW_INK_GRADIENT } from "../lib/brand";
 
 export default function FabricCTA() {
   return (
@@ -17,7 +17,7 @@ export default function FabricCTA() {
         You become the{" "}
         <span
           style={{
-            background: RAINBOW_GRADIENT,
+            background: RAINBOW_INK_GRADIENT,
             WebkitBackgroundClip: "text",
             backgroundClip: "text",
             color: "transparent",

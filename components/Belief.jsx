@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { RAINBOW_GRADIENT } from "../lib/brand";
+import { RAINBOW_GRADIENT, RAINBOW_INK_GRADIENT } from "../lib/brand";
 import supporters from "../public/assets/supporters.jpg";
 
 export default function Belief() {
@@ -54,7 +54,7 @@ export default function Belief() {
             Football is the{" "}
             <span
               style={{
-                background: RAINBOW_GRADIENT,
+                background: RAINBOW_INK_GRADIENT,
                 WebkitBackgroundClip: "text",
                 backgroundClip: "text",
                 color: "transparent",
@@ -81,7 +81,13 @@ export default function Belief() {
           }}
         >
           <span style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 5, background: RAINBOW_GRADIENT }} />
+          {/* Ornament, not content: the quote itself is #e7e7ea at 20px right below.
+              It measures 1.53:1, a contrast audit will flag it, and it should stay
+              that way. WCAG exempts pure decoration, and lifting it to 3:1 would put
+              a giant quote mark in competition with the sentence it decorates.
+              aria-hidden so it is not announced either. */}
           <div
+            aria-hidden="true"
             style={{
               fontSize: 60,
               lineHeight: 1,

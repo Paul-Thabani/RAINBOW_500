@@ -56,7 +56,7 @@ export default function ReachStats() {
         audiences in the Western Cape.
       </p>
 
-      <div style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: "#6d6d76", fontWeight: 800, marginBottom: 14 }}>
+      <div style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: "#818188", fontWeight: 800, marginBottom: 14 }}>
         Digital reach · Jan-Jun 2026
       </div>
       <div className="rb-grid-4" style={{ gap: 16, marginBottom: 16 }}>
@@ -76,7 +76,7 @@ export default function ReachStats() {
         ))}
       </div>
 
-      <div style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: "#6d6d76", fontWeight: 800, marginBottom: 14 }}>
+      <div style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: "#818188", fontWeight: 800, marginBottom: 14 }}>
         Social reach · seven months
       </div>
       <div

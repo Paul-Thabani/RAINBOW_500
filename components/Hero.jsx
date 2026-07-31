@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { fmt } from "../lib/useRainbow500";
-import { RAINBOW_GRADIENT, RAINBOW_SURFACE, RAINBOW_SURFACE_INK, BUTTON_SURFACE, BUTTON_INK } from "../lib/brand";
+import { RAINBOW_GRADIENT, RAINBOW_SURFACE, RAINBOW_SURFACE_INK, BUTTON_SURFACE, BUTTON_INK, RAINBOW_INK_GRADIENT } from "../lib/brand";
 import kitHero from "../public/assets/kit-hero-boxed.jpg";
 
 export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
@@ -106,7 +106,7 @@ export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
                 fontSize: 30,
                 fontWeight: 900,
                 letterSpacing: "-.01em",
-                background: RAINBOW_GRADIENT,
+                background: RAINBOW_INK_GRADIENT,
                 WebkitBackgroundClip: "text",
                 backgroundClip: "text",
                 color: "transparent",

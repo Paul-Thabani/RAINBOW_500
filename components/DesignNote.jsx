@@ -1,4 +1,3 @@
-import { RAINBOW_GRADIENT } from "../lib/brand";
 
 export default function DesignNote() {
   return (
@@ -35,10 +34,16 @@ export default function DesignNote() {
             letterSpacing: ".16em",
             textTransform: "uppercase",
             marginBottom: 6,
-            background: RAINBOW_GRADIENT,
-            WebkitBackgroundClip: "text",
-            backgroundClip: "text",
-            color: "transparent",
+            // Solid, not the rainbow. At 10px with .16em tracking a gradient gives
+            // every letter a different colour, which measured 2.40:1 on its worst
+            // stop and is the least legible line on the page. This card carries the
+            // information a buyer most needs to get right (white only, 3cm, bold
+            // shapes), so it is the wrong place to spend legibility on decoration.
+            // #e7e7ea is already this card's emphasis colour, so no new colour is
+            // introduced, and it measures 13.19:1 on the card's #10203a. The house
+            // pattern for section labels is a solid colour anyway; this one was the
+            // outlier.
+            color: "#e7e7ea",
           }}
         >
           A note from the manufacturer
