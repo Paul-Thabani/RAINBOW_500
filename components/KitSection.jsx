@@ -129,7 +129,10 @@ export default function KitSection({
         Pinch to zoom in on the shirt, then tap the square you want.
       </p>
 
-      <div style={{ maxWidth: 900, margin: "0 auto" }}>
+      {/* Was capped at 900px inside a 1136px content box, which threw away a
+          quarter of the available width on a wide screen and made every logo
+          smaller than it had to be. Now it uses the full column. */}
+      <div style={{ margin: "0 auto" }}>
         {/* Stacks below 900px, see .rb-kit-panels. Inline styles cannot hold a
             media query, so this one has to be a class. */}
         <div className="rb-kit-panels">

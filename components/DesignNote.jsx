@@ -44,7 +44,7 @@ export default function DesignNote() {
           A note from the manufacturer
         </div>
         <div style={{ fontSize: 13.5, lineHeight: 1.5, fontWeight: 600, color: "#b9bac2" }}>
-          One square is roughly <strong style={{ color: "#e7e7ea" }}>3 x 2.2 cm</strong> on a medium shirt,
+          One square is roughly <strong style={{ color: "#e7e7ea" }}>3 cm across</strong> on a medium shirt,
           about the size of a postage stamp. The position of your logo, message, drawing or autograph may
           shift slightly once printed. Everything else is exactly as shown.
         </div>
