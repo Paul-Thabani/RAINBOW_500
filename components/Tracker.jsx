@@ -139,7 +139,7 @@ export default function Tracker({ claimed, total, raised, price }) {
         />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.3fr", gap: 16, alignItems: "stretch" }}>
+      <div className="rb-two-col" style={{ "--rb-cols": "1fr 1.3fr", gap: 16, alignItems: "stretch" }}>
         <ProgressRing pct={pct} claimed={claimed} total={total} />
         <div
           style={{

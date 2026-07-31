@@ -32,7 +32,7 @@ export default function Pricing({ price, blockPrice }) {
       >
         Claim your patch of the shirt.
       </h2>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+      <div className="rb-two-col" style={{ "--rb-cols": "1fr 1fr", gap: 18 }}>
         <div style={{ background: "#10203a", border: "1px solid #24405f", borderRadius: 20, padding: 30 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
             <div style={{ fontWeight: 900, fontSize: 20, letterSpacing: "-.01em", textTransform: "uppercase" }}>

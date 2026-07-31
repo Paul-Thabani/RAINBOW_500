@@ -59,7 +59,7 @@ export default function ReachStats() {
       <div style={{ fontSize: 11, letterSpacing: ".16em", textTransform: "uppercase", color: "#6d6d76", fontWeight: 800, marginBottom: 14 }}>
         Digital reach · Jan-Jun 2026
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginBottom: 16 }}>
+      <div className="rb-grid-4" style={{ gap: 16, marginBottom: 16 }}>
         {DIGITAL.map((d) => (
           <div key={d.small} style={{ background: "#10203a", border: "1px solid #24405f", borderRadius: 16, padding: 22 }}>
             <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: "-.02em", color: "#f59e0b" }}>{d.big}</div>
@@ -67,7 +67,7 @@ export default function ReachStats() {
           </div>
         ))}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, marginBottom: 40 }}>
+      <div className="rb-grid-3" style={{ gap: 16, marginBottom: 40 }}>
         {AUDIENCE.map((d) => (
           <div key={d.small} style={{ background: "#10203a", border: "1px solid #24405f", borderRadius: 16, padding: 22 }}>
             <div style={{ fontSize: 28, fontWeight: 900, color: d.color }}>{d.big}</div>
@@ -90,7 +90,7 @@ export default function ReachStats() {
         <h3 style={{ fontSize: "clamp(24px,3.4vw,38px)", fontWeight: 900, letterSpacing: "-.02em", margin: "0 0 24px", textTransform: "uppercase" }}>
           34M+ views in seven months.
         </h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 24 }}>
+        <div className="rb-grid-4" style={{ gap: 24 }}>
           {SOCIAL.map((d) => (
             <div key={d.small}>
               <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: "-.02em", color: d.color }}>{d.big}</div>

@@ -3,8 +3,10 @@ import { fmt } from "../lib/useRainbow500";
 import deckPlayer from "../public/assets/deck-player.jpg";
 
 export default function FinalAsk({ onJoin, price }) {
+  // Photo beside copy above 900px, stacked below. See .rb-two-col.
   return (
     <section
+      className="rb-two-col"
       style={{
         margin: "64px 0 60px",
         background: "#10203a",
@@ -12,8 +14,7 @@ export default function FinalAsk({ onJoin, price }) {
         borderRadius: 24,
         position: "relative",
         overflow: "hidden",
-        display: "grid",
-        gridTemplateColumns: "minmax(0,0.85fr) minmax(0,1.4fr)",
+        "--rb-cols": "minmax(0,0.85fr) minmax(0,1.4fr)",
       }}
     >
       <div style={{ position: "relative", minHeight: 420 }}>

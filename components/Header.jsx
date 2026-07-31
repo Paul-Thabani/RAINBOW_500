@@ -3,15 +3,7 @@ import { RAINBOW_GRADIENT, BUTTON_SURFACE, BUTTON_INK } from "../lib/brand";
 
 export default function Header({ onJoin }) {
   return (
-    <header
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        padding: "22px 0",
-        gap: 16,
-      }}
-    >
+    <header className="rb-header" style={{ padding: "22px 0", gap: 16 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ width: 42, height: 42, borderRadius: "50%", overflow: "hidden", flex: "none" }}>
           <Crest size={42} />
@@ -33,7 +25,7 @@ export default function Header({ onJoin }) {
           </div>
         </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 26 }}>
+      <div className="rb-header-nav" style={{ display: "flex", alignItems: "center", gap: 26 }}>
         <a href="#idea" style={{ fontWeight: 700, fontSize: 13, letterSpacing: ".04em", color: "#cfd0d6" }}>
           The idea
         </a>

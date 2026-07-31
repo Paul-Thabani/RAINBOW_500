@@ -41,7 +41,7 @@ export default function DesignNote() {
             color: "transparent",
           }}
         >
-          A note from the printer
+          A note from the manufacturer
         </div>
         <div style={{ fontSize: 13.5, lineHeight: 1.5, fontWeight: 600, color: "#b9bac2" }}>
           The position of your logo, message, doodle or autograph may shift slightly once printed. Everything

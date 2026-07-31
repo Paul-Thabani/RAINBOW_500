@@ -38,7 +38,7 @@ export default function Impact() {
       >
         Straight back into the team.
       </h2>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }}>
+      <div className="rb-grid-4" style={{ gap: 16 }}>
         {IMPACT.map((f) => (
           <div
             key={f.t}
