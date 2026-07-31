@@ -117,7 +117,7 @@ export default function Belief() {
         </div>
       </div>
       <img
-        src="/assets/supporters.jpg"
+        src="/assets/supporters.jpg?v=2"
         alt="Hout Bay United supporters cheering from the stands, one leading chants with a megaphone"
         style={{
           display: "block",
