@@ -1,4 +1,6 @@
+import Image from "next/image";
 import { RAINBOW_GRADIENT } from "../lib/brand";
+import supporters from "../public/assets/supporters.jpg";
 
 export default function Belief() {
   return (
@@ -116,12 +118,17 @@ export default function Belief() {
           </p>
         </div>
       </div>
-      <img
-        src="/assets/supporters.jpg?v=2"
+      {/* Spans the full content box, which caps at 1136px (1180 container less
+          44px of padding). Below the fold, so it keeps next/image's default
+          lazy loading rather than competing with the hero for bandwidth. */}
+      <Image
+        src={supporters}
         alt="Hout Bay United supporters cheering from the stands, one leading chants with a megaphone"
+        sizes="(min-width: 1224px) 1136px, calc(100vw - 44px)"
         style={{
           display: "block",
           width: "100%",
+          height: "auto",
           aspectRatio: "16 / 7",
           objectFit: "cover",
           objectPosition: "center 38%",
