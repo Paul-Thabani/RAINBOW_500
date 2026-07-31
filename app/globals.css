@@ -97,3 +97,23 @@ h2 {
     display: block;
   }
 }
+
+/* The hero was a two column grid at every width, so on a 390px phone the copy
+   and the shirt each got roughly half of a 346px content box and the kit
+   rendered about 121px wide. Same breakpoint as .rb-kit-panels so the page
+   changes shape once rather than twice. */
+.rb-hero {
+  display: grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap: 48px;
+  align-items: center;
+  padding: 44px 0 56px;
+}
+
+@media (max-width: 900px) {
+  .rb-hero {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    padding: 24px 0 40px;
+  }
+}
