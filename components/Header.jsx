@@ -59,7 +59,7 @@ export default function Header({ onJoin }) {
             border: "none",
           }}
         >
-          Join the Rainbow 500
+          Join the Legacy 500
         </button>
       </div>
     </header>

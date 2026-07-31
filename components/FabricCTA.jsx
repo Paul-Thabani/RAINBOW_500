@@ -27,8 +27,8 @@ export default function FabricCTA() {
         </span>{" "}
         of our shirt.
       </h2>
-      <p style={{ fontSize: 17, color: "#8b8b93", margin: "20px auto 0", maxWidth: 460 }}>
-        Part of the community, and woven into the shirt we play in.
+      <p style={{ fontSize: "clamp(20px,2.6vw,28px)", color: "#b9bac2", fontWeight: 600, lineHeight: 1.4, margin: "22px auto 0", maxWidth: 620 }}>
+        Part of the community, and woven into our legacy forever.
       </p>
     </section>
   );

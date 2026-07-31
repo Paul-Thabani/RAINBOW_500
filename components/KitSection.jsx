@@ -50,7 +50,7 @@ export default function KitSection({
             }}
           >
             <span style={{ width: 26, height: 3, borderRadius: 2, background: RAINBOW_GRADIENT }} />
-            Join the Rainbow 500
+            Join the Legacy 500
           </div>
           <h2 style={{ fontSize: "clamp(28px,4vw,50px)", fontWeight: 900, margin: 0, letterSpacing: "-.02em", textTransform: "uppercase", lineHeight: 1.02 }}>
             Claim your square.

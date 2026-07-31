@@ -101,8 +101,34 @@ export default function Belief() {
             When the shirt reaches our fans, it&apos;ll be priced for the people who&apos;ve earned it: week
             after week, rain or shine.
           </p>
+          <p
+            style={{
+              fontSize: 15,
+              lineHeight: 1.6,
+              color: "#8b8b93",
+              fontWeight: 500,
+              margin: "18px 0 0",
+            }}
+          >
+            Football shirts are incredibly expensive. We&apos;re committed to keeping this one affordable,
+            from as little as R50, so anyone can wear it, while supporters who have the means are welcome to
+            pay more.
+          </p>
         </div>
       </div>
+      <img
+        src="/assets/supporters.jpg"
+        alt="Hout Bay United supporters cheering from the stands, one leading chants with a megaphone"
+        style={{
+          display: "block",
+          width: "100%",
+          aspectRatio: "16 / 7",
+          objectFit: "cover",
+          objectPosition: "center 38%",
+          borderRadius: 18,
+          marginTop: 44,
+        }}
+      />
     </section>
   );
 }

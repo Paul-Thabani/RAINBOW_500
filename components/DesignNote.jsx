@@ -44,7 +44,7 @@ export default function DesignNote() {
           A note from the printer
         </div>
         <div style={{ fontSize: 13.5, lineHeight: 1.5, fontWeight: 600, color: "#b9bac2" }}>
-          The position of your logo, message or doodle may shift slightly once printed. Everything
+          The position of your logo, message, doodle or autograph may shift slightly once printed. Everything
           else is exactly as shown.
         </div>
       </div>

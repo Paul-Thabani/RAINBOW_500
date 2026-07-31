@@ -208,7 +208,7 @@ export default async function AdminPage() {
               <span style={{ width: 26, height: 3, borderRadius: 2, background: RAINBOW_GRADIENT }} />
               Admin · live orders
             </div>
-            <h1 style={{ fontSize: 32, fontWeight: 900, margin: 0, letterSpacing: "-.02em" }}>Rainbow 500 Orders</h1>
+            <h1 style={{ fontSize: 32, fontWeight: 900, margin: 0, letterSpacing: "-.02em" }}>Legacy 500 Orders</h1>
             <p style={{ color: "#8b8b93", margin: "6px 0 0", fontSize: 15 }}>
               Every checkout attempt, confirmed or not - newest first.
             </p>

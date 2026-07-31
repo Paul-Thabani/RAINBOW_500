@@ -41,14 +41,14 @@ export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
             textTransform: "uppercase",
           }}
         >
-          Rainbow
+          Legacy
           <br />
           500
         </h1>
         <p style={{ fontSize: 18, lineHeight: 1.6, color: "#b9bac2", maxWidth: 500, margin: "0 0 30px" }}>
           One shirt, split into <strong style={{ color: "#fff" }}>{total} squares</strong>. Claim a square
-          from <strong style={{ color: "#fff" }}>R{fmt(price)}</strong>, put your name, logo or doodle on the
-          kit - and get the shirt free.
+          from <strong style={{ color: "#fff" }}>R{fmt(price)}</strong>, put your name, logo, doodle or
+          autograph on the kit, and receive a shirt as a thank-you once all {total} spaces have been taken.
         </p>
         <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 16, marginBottom: 22 }}>
           <button
@@ -93,7 +93,8 @@ export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
                 rendered as "free shirt.Once your purchase". Same reason
                 Belief.jsx and FabricCTA.jsx use this pattern. */}
             <strong style={{ color: "#fff" }}>Every square includes a free shirt.</strong>{" "}
-            Once your purchase is confirmed we&apos;ll email you a short form to capture your size.
+            Once all {total}{" "}spaces are taken we&apos;ll produce the kit and email you a short form
+            to capture your size, then send yours as a thank-you.
           </div>
         </div>
         <div style={{ display: "flex", gap: 40, flexWrap: "wrap" }}>
@@ -149,37 +150,37 @@ export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
           }}
         >
           <img
-            src="/assets/top-shirt.png?v=3"
-            alt="The HBUFC The Goal is Love kit, front, showing how the shirt could look once every square is claimed"
-            style={{ display: "block", width: "94%", height: "auto", margin: "0 auto" }}
+            src="/assets/kit-hero-boxed.jpg?v=1"
+            alt="The HBUFC The Goal is Love kit, showing how the shirt could look once every square is claimed"
+            style={{ display: "block", width: "100%", height: "auto", margin: "0 auto", borderRadius: 16 }}
           />
           <div
             style={{
               textAlign: "center",
-              marginTop: 12,
-              fontSize: 11,
-              color: "#8b8b93",
-              letterSpacing: ".14em",
-              textTransform: "uppercase",
-              fontWeight: 700,
+              marginTop: 14,
+              fontSize: 16,
+              color: "#e7e7ea",
+              fontWeight: 800,
+              letterSpacing: "-.01em",
             }}
           >
-            The 2026/27 shirt
+            This is a legacy shirt.
           </div>
-          {/* This is the mockup of the filled shirt, so the caption belongs
-              here rather than over the interactive board. It replaces "the
-              finished vision", which said the same thing less clearly. */}
+          {/* The legacy narrative lives with the shirt mockup: your square is a
+              permanent place on the kit, so the promise belongs next to it. */}
           <div
             style={{
               textAlign: "center",
-              marginTop: 7,
-              fontSize: 12.5,
-              lineHeight: 1.45,
+              fontSize: 13.5,
+              lineHeight: 1.5,
               color: "#8b8b93",
               fontWeight: 600,
+              maxWidth: 440,
+              margin: "7px auto 0",
             }}
           >
-            A preview of how the shirt could look once all {total} spots are claimed.
+            Renew your spot season after season and keep your place on the shirt forever, claiming a
+            permanent part of the fabric of our community.
           </div>
         </div>
       </div>
