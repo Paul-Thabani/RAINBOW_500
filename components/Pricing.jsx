@@ -1,5 +1,5 @@
 import { fmt } from "../lib/useRainbow500";
-import { RAINBOW_GRADIENT, RAINBOW_SURFACE, RAINBOW_SURFACE_INK } from "../lib/brand";
+import { RAINBOW_GRADIENT, BUTTON_SURFACE, BUTTON_INK } from "../lib/brand";
 
 export default function Pricing({ price, blockPrice }) {
   return (
@@ -72,8 +72,8 @@ export default function Pricing({ price, blockPrice }) {
                 fontWeight: 900,
                 letterSpacing: ".12em",
                 textTransform: "uppercase",
-                color: RAINBOW_SURFACE_INK,
-                background: RAINBOW_SURFACE,
+                color: BUTTON_INK,
+                background: BUTTON_SURFACE,
                 padding: "6px 11px",
                 borderRadius: 999,
               }}
