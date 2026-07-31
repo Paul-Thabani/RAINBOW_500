@@ -12,7 +12,7 @@ const BACK_ZONES = zonesFor("back");
 const TABS = [
   { id: "logo", label: "Logo" },
   { id: "message", label: "Message" },
-  { id: "doodle", label: "Doodle" },
+  { id: "doodle", label: "Draw" },
 ];
 
 // Everything a browser puts in the tab order, minus what is in the DOM but not
@@ -408,8 +408,14 @@ export default function EditorModal({
   const phoneValid = (ed.phone || "").replace(/[^0-9]/g, "").length >= 7;
   const canSubmit = emailValid && phoneValid && !isCheckingOut;
 
-  const reserveLabel = ed.size === 4 ? `Reserve a block of 4 · R${fmt(blockPrice)}` : `Reserve a square · R${fmt(price)}`;
+  // "Claim" throughout, matching the hero and the section heading. The flow used
+  // to say claim, choose, reserve and make it yours for the same single action,
+  // which is three extra words to learn for anyone reading in a second language.
+  const reserveLabel = ed.size === 4 ? `Claim a block of 4 · R${fmt(blockPrice)}` : `Claim a square · R${fmt(price)}`;
   const editorTitle = isDetailsStep ? "Your details" : isReviewStep ? "How it looks" : "Make it yours";
+  // Three screens with nothing saying how many there are is the main reason a
+  // form feels endless to somebody who is not confident online.
+  const stepNumber = isDetailsStep ? 3 : isReviewStep ? 2 : 1;
   const previewHeading = isReviewStep ? "Your design on the shirt" : "Preview on shirt";
   const securePriceLabel = ed.size === 4 ? fmt(blockPrice) : fmt(price);
   const continueLabel = "Continue";
@@ -521,6 +527,9 @@ export default function EditorModal({
           <div>
             <div style={{ fontSize: 11, letterSpacing: ".14em", textTransform: "uppercase", color: "#6b7280", fontWeight: 800 }}>
               {reserveLabel}
+            </div>
+            <div style={{ fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: "#9aa1ac", fontWeight: 800, marginTop: 3 }}>
+              Step {stepNumber} of 3
             </div>
             {/* A real heading, and the dialog's accessible name. Margins are
                 zeroed so it still renders exactly as the div it replaced. */}
@@ -781,7 +790,27 @@ export default function EditorModal({
         )}
 
         <div style={{ padding: "16px 22px", borderTop: "1px solid #eceef1", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-          <div style={{ fontSize: 13, color: "#6b7280", fontWeight: 600 }}>Funds kit, boots, nutrition &amp; more.</div>
+          {/* At the details step this slot carries the thing a buyer wants to
+              know before handing over a card, rather than a general note about
+              what the money funds. Nothing on this page said the payment was
+              handled by anybody reputable. */}
+          <div style={{ fontSize: 12.5, color: "#6b7280", fontWeight: 600, lineHeight: 1.45, maxWidth: 320 }}>
+            {isDetailsStep ? (
+              <>
+                Payments are processed securely by Netcash. By continuing you agree to our{" "}
+                <a href="/terms" target="_blank" rel="noopener" style={{ color: "#12151c", textDecoration: "underline" }}>
+                  terms
+                </a>{" "}
+                and{" "}
+                <a href="/privacy" target="_blank" rel="noopener" style={{ color: "#12151c", textDecoration: "underline" }}>
+                  privacy notice
+                </a>
+                .
+              </>
+            ) : (
+              "Funds kit, boots, nutrition and more."
+            )}
+          </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {isEditStep && (
               <>
