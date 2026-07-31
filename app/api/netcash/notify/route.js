@@ -1,6 +1,8 @@
 import { query } from "../../../../lib/db";
 import { parseNotifyFields } from "../../../../lib/netcash";
 import { cellKey } from "../../../../lib/zones";
+import { sendMail } from "../../../../lib/mailer";
+import { buyerReceipt, conflictAlert } from "../../../../lib/emails";
 
 // Netcash calls this server-to-server once a Pay Now transaction resolves
 // (this URL is configured in the Netcash dashboard: Account Profile ->
@@ -37,6 +39,44 @@ function cellsOf(row) {
 // Settle every row of this order, but only if it is still resolvable. Doing the
 // status guard in the WHERE clause rather than in JS is what makes
 // first-notify-wins hold: two concurrent notifies cannot both match.
+// Every cell an order covers, so the receipt can say "4 squares" whether that
+// was four rows of span 1 or one big row of span 2.
+function squareCount(rows) {
+  return rows.reduce((n, r) => n + (r.span || 1) ** 2, 0);
+}
+
+// Deliberately not awaited by the caller.
+//
+// Tying a send to the response would lose receipts rather than protect them.
+// If the send were awaited and it timed out, Netcash would retry, the retry
+// would find the order already settled, take the `updated === 0` early return,
+// and never send anything at all. Detached, the first attempt runs to
+// completion after the callback has been acknowledged. This is a long-lived
+// Node process under pm2, not a serverless function that freezes on response,
+// so the promise does finish.
+//
+// sendMail never throws, but the template call sits inside the same try so a
+// bad interpolation can't surface as an unhandled rejection either.
+function sendDetached(build) {
+  (async () => {
+    try {
+      const { to, replyTo, ...message } = build();
+      await sendMail({ to, replyTo, ...message });
+    } catch (e) {
+      console.error("Netcash notify: couldn't build or send mail -", e.message);
+    }
+  })();
+}
+
+function alertOnConflict({ reference, amount, buyerEmail, squares, cause }) {
+  const to = process.env.ADMIN_ALERT_EMAIL;
+  if (!to) {
+    console.warn("Netcash notify: ADMIN_ALERT_EMAIL unset, no one is being told about", reference);
+    return;
+  }
+  sendDetached(() => ({ to, ...conflictAlert({ reference, amount, buyerEmail, squares, cause }) }));
+}
+
 async function settle(reference, status, requestTrace) {
   const sql =
     status === "paid"
@@ -61,7 +101,7 @@ export async function POST(request) {
 
   try {
     const { rows } = await query(
-      `select id, zone_id, col, "row", span, order_amount, status
+      `select id, zone_id, col, "row", span, order_amount, buyer_email, status
          from squares
         where m_payment_id = $1`,
       [fields.reference]
@@ -120,6 +160,13 @@ export async function POST(request) {
         "- payment was accepted but the cells are taken, needs a manual refund"
       );
       await settle(fields.reference, "conflict");
+      alertOnConflict({
+        reference: fields.reference,
+        amount: expected,
+        buyerEmail: rows[0].buyer_email,
+        squares: squareCount(rows),
+        cause: "cell conflict found before settling",
+      });
       return new Response("OK", { status: 200 });
     }
 
@@ -141,6 +188,18 @@ export async function POST(request) {
       );
     }
 
+    // Exactly one receipt per order. `updated` is only non-zero for the notify
+    // that actually flipped the rows to paid, so a duplicate or replayed
+    // callback returns above and never reaches this.
+    sendDetached(() => ({
+      to: rows[0].buyer_email,
+      ...buyerReceipt({
+        squares: squareCount(rows),
+        amount: expected,
+        reference: fields.reference,
+      }),
+    }));
+
     return new Response("OK", { status: 200 });
   } catch (e) {
     // 23505 = the partial unique index refused the write, so another live
@@ -157,6 +216,16 @@ export async function POST(request) {
       } catch (inner) {
         console.error("Netcash notify: couldn't even mark it conflict:", inner.message);
       }
+      // `rows` never made it into scope on this path, so the alert carries only
+      // what the callback itself told us. The reference is enough to find the
+      // order in /admin.
+      alertOnConflict({
+        reference: fields.reference,
+        amount: fields.amount,
+        buyerEmail: null,
+        squares: null,
+        cause: "unique index refused the write",
+      });
       return new Response("OK", { status: 200 });
     }
     // Anything else is transient as far as we know. Don't acknowledge: the
