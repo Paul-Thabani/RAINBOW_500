@@ -4,6 +4,19 @@ import { ENTITY } from "./LegalPage";
 
 const linkStyle = { color: "#cfd0d6", textDecoration: "underline", textUnderlineOffset: 3 };
 
+// Only accounts confirmed to exist. The club's own site links two that do not:
+// an Instagram handle that returns "Profile isn't available" and a second
+// Facebook URL that resolves to a bare "Facebook" page rather than the club's.
+// Both were checked by loading them in a real browser, because Facebook and
+// Instagram answer 200 to a plain fetch whether the profile exists or not.
+const SOCIAL = [
+  ["Instagram", "https://www.instagram.com/houtbayunitedfc"],
+  ["Facebook", "https://www.facebook.com/HoutbayUnitedFC"],
+  ["X", "https://x.com/HoutBayUnitedfc"],
+  ["YouTube", "https://www.youtube.com/@houtbayunitedfc"],
+  ["LinkedIn", "https://www.linkedin.com/company/hout-bay-united-football-community/"],
+];
+
 // The page used to contain three links and all three were in-page anchors, so a
 // supporter about to spend R2,000 could not click through to the club, could not
 // find terms, and could not find anybody to email. A site that takes money and
@@ -51,6 +64,14 @@ export default function Footer() {
             Privacy
           </Link>
         </div>
+      </div>
+
+      <div style={{ marginTop: 20, display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13, fontWeight: 700 }}>
+        {SOCIAL.map(([name, href]) => (
+          <a key={name} href={href} rel="me noopener" style={{ ...linkStyle, color: "#8b8b93" }}>
+            {name}
+          </a>
+        ))}
       </div>
 
       <div

@@ -1,5 +1,5 @@
 import Crest from "./Crest";
-import { RAINBOW_GRADIENT, RAINBOW_SURFACE, RAINBOW_SURFACE_INK } from "../lib/brand";
+import { RAINBOW_GRADIENT, BUTTON_SURFACE, BUTTON_INK } from "../lib/brand";
 
 export default function Header({ onJoin }) {
   return (
@@ -52,8 +52,8 @@ export default function Header({ onJoin }) {
             fontWeight: 800,
             fontSize: 13,
             letterSpacing: ".04em",
-            color: RAINBOW_SURFACE_INK,
-            background: RAINBOW_SURFACE,
+            color: BUTTON_INK,
+            background: BUTTON_SURFACE,
             padding: "11px 18px",
             borderRadius: 999,
             border: "none",

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { fmt } from "../lib/useRainbow500";
-import { RAINBOW_GRADIENT, RAINBOW_SURFACE, RAINBOW_SURFACE_INK } from "../lib/brand";
+import { RAINBOW_GRADIENT, RAINBOW_SURFACE, RAINBOW_SURFACE_INK, BUTTON_SURFACE, BUTTON_INK } from "../lib/brand";
 import kitHero from "../public/assets/kit-hero-boxed.jpg";
 
 export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
@@ -55,8 +55,8 @@ export default function Hero({ onJoin, goalLabel, claimed, total, price }) {
               fontFamily: "inherit",
               fontWeight: 800,
               fontSize: 16,
-              color: RAINBOW_SURFACE_INK,
-              background: RAINBOW_SURFACE,
+              color: BUTTON_INK,
+              background: BUTTON_SURFACE,
               padding: "15px 26px",
               borderRadius: 999,
               border: "none",

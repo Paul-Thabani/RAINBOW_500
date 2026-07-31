@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { fmt, spotColor, pendingEntries, getZone, zonesFor } from "../lib/useRainbow500";
 import { RegionOverlay } from "./ShirtPanel";
 import DoodleCanvas from "./DoodleCanvas";
-import { RAINBOW_GRADIENT } from "../lib/brand";
+import { RAINBOW_GRADIENT, BUTTON_SURFACE_ON_LIGHT, BUTTON_INK } from "../lib/brand";
 
 const FRONT_ZONES = zonesFor("front");
 const BACK_ZONES = zonesFor("back");
@@ -456,7 +456,7 @@ export default function EditorModal({
     border: "none",
     padding: "11px 20px",
     borderRadius: 999,
-    background: canProceed ? RAINBOW_GRADIENT : "#c9ccd2",
+    background: canProceed ? BUTTON_SURFACE_ON_LIGHT : "#c9ccd2",
     opacity: hasContent ? 1 : 0.8,
   };
   const proceedStyle = {
@@ -468,7 +468,7 @@ export default function EditorModal({
     border: "none",
     padding: "11px 20px",
     borderRadius: 999,
-    background: canSubmit ? RAINBOW_GRADIENT : "#c9ccd2",
+    background: canSubmit ? BUTTON_SURFACE_ON_LIGHT : "#c9ccd2",
     opacity: isCheckingOut ? 0.8 : 1,
   };
   const inputStyle = {
