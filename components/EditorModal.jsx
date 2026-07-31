@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { fmt, spotColor, pendingEntries, getZone, zonesFor } from "../lib/useRainbow500";
 import { RegionOverlay } from "./ShirtPanel";
 import DoodleCanvas from "./DoodleCanvas";
@@ -232,6 +233,7 @@ export default function EditorModal({
   tabMsgClick,
   tabDoodleClick,
   onLogoFile,
+  onLogoDrop,
   onMsgInput,
   attachCanvas,
   clearDoodle,
@@ -246,6 +248,17 @@ export default function EditorModal({
   checkout,
   isCheckingOut,
 }) {
+  const [logoDragOver, setLogoDragOver] = useState(false);
+  const handleLogoDragOver = (e) => {
+    e.preventDefault();
+    setLogoDragOver(true);
+  };
+  const handleLogoDragLeave = () => setLogoDragOver(false);
+  const handleLogoDrop = (e) => {
+    setLogoDragOver(false);
+    onLogoDrop(e);
+  };
+
   const ed = editor;
   const isEditStep = (ed.step || "edit") === "edit";
   const isReviewStep = ed.step === "review";
@@ -421,11 +434,24 @@ export default function EditorModal({
 
             <div style={{ padding: "18px 22px 6px" }}>
               {ed.tab === "logo" && (
-                <label style={{ display: "block", border: "2px dashed #cfd3da", borderRadius: 16, padding: 24, textAlign: "center", cursor: "pointer" }}>
+                <label
+                  onDragOver={handleLogoDragOver}
+                  onDragLeave={handleLogoDragLeave}
+                  onDrop={handleLogoDrop}
+                  style={{
+                    display: "block",
+                    border: `2px dashed ${logoDragOver ? "#5f4ea1" : "#cfd3da"}`,
+                    background: logoDragOver ? "#f5f3fb" : "transparent",
+                    borderRadius: 16,
+                    padding: 24,
+                    textAlign: "center",
+                    cursor: "pointer",
+                  }}
+                >
                   <input type="file" accept="image/*" onChange={onLogoFile} style={{ display: "none" }} />
                   <div style={{ fontSize: 15, fontWeight: 800, color: "#12151c" }}>Upload your logo</div>
                   <div style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>
-                    PNG or JPG. A transparent PNG looks best on the white kit.
+                    PNG or JPG, or drag a file in. A transparent PNG looks best on the white kit.
                   </div>
                 </label>
               )}

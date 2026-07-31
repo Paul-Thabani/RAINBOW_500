@@ -84,10 +84,6 @@ export default function KitSection({
             Block of 4 · R{fmt(blockPrice)}
           </button>
         </div>
-        <span style={{ fontSize: 13, color: "#8b8b93", fontWeight: 600, flex: 1, minWidth: 220 }}>
-          A block is 2×2 adjacent squares. Add four pieces, or one piece 4× the size. Click an open
-          place on the shirt.
-        </span>
       </div>
 
       <div style={{ maxWidth: 900, margin: "0 auto" }}>

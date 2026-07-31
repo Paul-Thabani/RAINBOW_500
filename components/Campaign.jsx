@@ -18,6 +18,7 @@ import ReachStats from "./ReachStats";
 import FinalAsk from "./FinalAsk";
 import Footer from "./Footer";
 import Toast from "./Toast";
+import PaymentSuccessModal from "./PaymentSuccessModal";
 
 export default function Campaign() {
   const reservations = useReservations();
@@ -100,6 +101,7 @@ export default function Campaign() {
           tabMsgClick={r.tabMsgClick}
           tabDoodleClick={r.tabDoodleClick}
           onLogoFile={r.onLogoFile}
+          onLogoDrop={r.onLogoDrop}
           onMsgInput={r.onMsgInput}
           attachCanvas={r.attachCanvas}
           clearDoodle={r.clearDoodle}
@@ -117,6 +119,8 @@ export default function Campaign() {
       )}
 
       <Toast message={r.toast} />
+
+      <PaymentSuccessModal open={reservations.paymentSuccess} onClose={reservations.dismissPaymentSuccess} />
     </div>
   );
 }
