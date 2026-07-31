@@ -448,10 +448,18 @@ export default function EditorModal({
                     cursor: "pointer",
                   }}
                 >
-                  <input type="file" accept="image/*" onChange={onLogoFile} style={{ display: "none" }} />
+                  {/* The copy promises PNG or JPG, so accept should say the
+                      same. image/* let SVG, GIF and HEIC through, none of which
+                      the compressor or the printer handles predictably. */}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg"
+                    onChange={onLogoFile}
+                    style={{ display: "none" }}
+                  />
                   <div style={{ fontSize: 15, fontWeight: 800, color: "#12151c" }}>Upload your logo</div>
                   <div style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>
-                    PNG or JPG, or drag a file in. A transparent PNG looks best on the white kit.
+                    PNG or JPG, or drag a file in. A transparent PNG sits best on the rainbow kit.
                   </div>
                 </label>
               )}
@@ -490,12 +498,23 @@ export default function EditorModal({
             <div style={{ fontSize: 13, color: "#6b7280", fontWeight: 600, marginBottom: 18 }}>
               We&apos;ll use these to send your receipt and reach you about your square.
             </div>
+            {/* htmlFor/id so the visible text is genuinely the field's
+                accessible name rather than just sitting above it, and
+                autoComplete so a phone offers to fill both. On an audience that
+                is 82% mobile, autofill is free conversion. */}
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 800, color: "#12151c", marginBottom: 6 }}>
+              <label
+                htmlFor="buyer-email"
+                style={{ display: "block", fontSize: 12, fontWeight: 800, color: "#12151c", marginBottom: 6 }}
+              >
                 Email address
               </label>
               <input
+                id="buyer-email"
+                name="email"
                 type="email"
+                autoComplete="email"
+                inputMode="email"
                 value={ed.email || ""}
                 onChange={onEmailInput}
                 placeholder="you@example.com"
@@ -503,11 +522,18 @@ export default function EditorModal({
               />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 12, fontWeight: 800, color: "#12151c", marginBottom: 6 }}>
+              <label
+                htmlFor="buyer-phone"
+                style={{ display: "block", fontSize: 12, fontWeight: 800, color: "#12151c", marginBottom: 6 }}
+              >
                 Phone number
               </label>
               <input
+                id="buyer-phone"
+                name="phone"
                 type="tel"
+                autoComplete="tel"
+                inputMode="tel"
                 value={ed.phone || ""}
                 onChange={onPhoneInput}
                 placeholder="e.g. 082 123 4567"

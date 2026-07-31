@@ -21,8 +21,20 @@ export default function Footer() {
           Hout Bay United FC
         </div>
       </div>
+      {/* Until now the entire page contained three links, all in-page anchors,
+          so a supporter about to spend R2,000 could not click through to the
+          club at all. A site that takes money and links nowhere is the pattern
+          people have been taught to distrust. The club site is linked here;
+          contact, terms, privacy and refund still need real content and a
+          decision on which address and handles to publish. */}
       <div style={{ fontSize: 13, color: "#8b8b93", fontWeight: 700, letterSpacing: ".06em" }}>
-        hbufc.co.za · @hbufc · Hout Bay, Cape Town
+        <a
+          href="https://hbufc.co.za"
+          style={{ color: "#cfd0d6", textDecoration: "underline", textUnderlineOffset: 3 }}
+        >
+          hbufc.co.za
+        </a>
+        {" · @hbufc · Hout Bay, Cape Town"}
       </div>
     </footer>
   );
