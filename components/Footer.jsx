@@ -2,7 +2,22 @@ import Link from "next/link";
 import Crest from "./Crest";
 import { ENTITY } from "./LegalPage";
 
-const linkStyle = { color: "#cfd0d6", textDecoration: "underline", textUnderlineOffset: 3 };
+// All of these were 15 to 16px tall, set by the line height of the text and
+// nothing else, so every one failed the WCAG 2.5.8 24x24 minimum. They sit in flex
+// rows rather than inside sentences, so the "inline" exemption does not apply.
+//
+// minWidth matters as much as minHeight here: the X link is one character, and it
+// measured 10px wide. Ten pixels is not a target, it is a coin toss.
+const linkStyle = {
+  color: "#cfd0d6",
+  textDecoration: "underline",
+  textUnderlineOffset: 3,
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  minHeight: 44,
+  minWidth: 44,
+};
 
 // Only accounts confirmed to exist. The club's own site links two that do not:
 // an Instagram handle that returns "Profile isn't available" and a second
@@ -47,7 +62,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 18, flexWrap: "wrap", fontSize: 13.5, fontWeight: 700 }}>
+        <div style={{ display: "flex", columnGap: 18, rowGap: 0, flexWrap: "wrap", fontSize: 13.5, fontWeight: 700 }}>
           <a href="https://hbufc.co.za" style={linkStyle}>
             hbufc.co.za
           </a>
@@ -66,7 +81,7 @@ export default function Footer() {
         </div>
       </div>
 
-      <div style={{ marginTop: 20, display: "flex", gap: 16, flexWrap: "wrap", fontSize: 13, fontWeight: 700 }}>
+      <div style={{ marginTop: 6, display: "flex", columnGap: 16, rowGap: 0, flexWrap: "wrap", fontSize: 13, fontWeight: 700 }}>
         {SOCIAL.map(([name, href]) => (
           <a key={name} href={href} rel="me noopener" style={{ ...linkStyle, color: "#8b8b93" }}>
             {name}
