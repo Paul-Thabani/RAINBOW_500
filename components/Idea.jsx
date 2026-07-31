@@ -1,5 +1,5 @@
 import { fmt } from "../lib/useRainbow500";
-import { RAINBOW_GRADIENT } from "../lib/brand";
+import { RAINBOW_GRADIENT, RAINBOW_INK_GRADIENT } from "../lib/brand";
 
 export default function Idea({ price, total }) {
   return (
@@ -78,7 +78,7 @@ export default function Idea({ price, total }) {
               fontWeight: 900,
               letterSpacing: "-.03em",
               lineHeight: 1,
-              background: RAINBOW_GRADIENT,
+              background: RAINBOW_INK_GRADIENT,
               WebkitBackgroundClip: "text",
               backgroundClip: "text",
               color: "transparent",

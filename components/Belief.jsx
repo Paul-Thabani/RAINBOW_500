@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { RAINBOW_GRADIENT } from "../lib/brand";
+import { RAINBOW_GRADIENT, RAINBOW_INK_GRADIENT } from "../lib/brand";
 import supporters from "../public/assets/supporters.jpg";
 
 export default function Belief() {
@@ -54,7 +54,7 @@ export default function Belief() {
             Football is the{" "}
             <span
               style={{
-                background: RAINBOW_GRADIENT,
+                background: RAINBOW_INK_GRADIENT,
                 WebkitBackgroundClip: "text",
                 backgroundClip: "text",
                 color: "transparent",
