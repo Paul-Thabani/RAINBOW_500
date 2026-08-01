@@ -19,6 +19,42 @@ Rules for this file, also stated in CLAUDE.md:
 
 ## Fixed
 
+### The hero glow ate the bottom of every header control (#46)
+
+Found by building the audit that #44 showed was missing: not whether a control looks
+right, but whether a real press at its own coordinates lands on it.
+
+`.rb-hero-glow` is a decorative blurred gradient with `inset: -12% -8%`, so it
+deliberately overhangs its parent, and at 1440px that overhang reaches into the header.
+It had `pointer-events: auto`.
+
+- glow `rect[722,49,599,858]`, `inset -82.98px -41.34px`, overlaps the header
+- all three nav links and the primary "Join the Legacy 500" button: **3 of 5** probe
+  points land, the lower two hit the glow
+- after `pointer-events: none`: 5 of 5, and 0 partly-covered controls out of 106 probed
+
+Half-working is worse than broken, because nobody can tell what they did wrong.
+
+### I took the stylesheet down on live for about twenty minutes (mine, not the code's)
+
+Building a branch in the deploy directory replaces the static assets under the running
+pm2 process, so the HTML it serves references asset hashes that no longer exist. The
+page kept returning 200. The API kept returning 200. The stylesheet returned **500**,
+21 bytes of "Internal Server Error", so the entire site was unstyled.
+
+Every check being run at the time passed, because they all checked the HTML and the API
+and never the assets the HTML asked for.
+
+It also corrupted the investigation in progress. With the CSS gone, `.rb-hero-glow`
+computed as `position: static` with zero height, so the fault above looked like it did
+not reproduce, and I briefly concluded it was a false positive. It was real; I had
+broken the page I was measuring.
+
+`scripts/verify-deploy.mjs` now asserts every asset the served HTML references actually
+resolves, including that a stylesheet is not a 200-with-an-error-page. Run it after any
+deploy. There is a memory about this trap already and it did not stop me, so the check
+is in the repo rather than in my head.
+
 ### Pressing the back of the shirt did nothing (#44)
 
 Reported from the live site. Reproduced at 390px and 1440px.
@@ -190,6 +226,12 @@ Recorded because each of these produced a fault that looked fine on inspection.
 4. **Scale physical sizes by the torso, not the whole render.** The sleeves add 63% to
    the width, so the wrong denominator understates a square by a third. This one has
    now been got wrong twice.
-5. **`TOTAL_SQUARES` is computed.** Any change to a box, column count, clearance or
+5. **A 200 on `/` does not mean the site works.** The page and the API can both be
+   healthy while the stylesheet 500s and the whole site renders unstyled. Check the
+   assets the HTML actually asks for: `node scripts/verify-deploy.mjs <url>`.
+6. **Never leave `.next` on a branch build.** It is shared with the running server, so
+   building a branch here breaks live until main is rebuilt. If a measurement suddenly
+   stops reproducing, check this before believing it.
+7. **`TOTAL_SQUARES` is computed.** Any change to a box, column count, clearance or
    mask moves the campaign's headline number. It is a check, not a claim, so read it
    after touching the grid.
