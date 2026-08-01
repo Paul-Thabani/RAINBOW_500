@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import useRainbow500, { fmt } from "../lib/useRainbow500";
+import useRainbow500, { fmt, getZone, occSetFrom, validFoot, cellKey } from "../lib/useRainbow500";
 import useReservations from "../lib/useReservations";
 import Header from "./Header";
 import Hero from "./Hero";
@@ -29,6 +29,31 @@ export default function Campaign() {
     if (reservations.redirectNotice) r.pingToast(reservations.redirectNotice);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reservations.redirectNotice]);
+
+  // Coming back from a cancelled or declined payment. Waits for the board to load
+  // first, because whether the original square is still free is the one thing that
+  // decides what to offer, and cleared immediately so it only fires once.
+  useEffect(() => {
+    const saved = reservations.resumable;
+    if (!saved || !reservations.loaded) return;
+    reservations.clearResumable();
+    const zone = getZone(saved.zoneId);
+    const free = zone && validFoot(occSetFrom(reservations.reserved), zone, saved.col, saved.row, saved.size);
+    // "Occupied" is not the same as "somebody else got it". If the cell is held by a
+    // pending row it is almost certainly this buyer's own reservation, either because
+    // the release has not landed yet or because they came back without Netcash's
+    // cancel link running. Telling them a stranger took their square in that case is
+    // both wrong and the most discouraging thing the page could say.
+    const holder = reservations.reserved[cellKey(saved.zoneId, saved.col, saved.row)];
+    const soldToSomeoneElse = !free && holder && holder.status === "paid";
+    if (soldToSomeoneElse) {
+      r.pingToast("That square sold while you were paying. Pick another one and your design is still here.");
+      return;
+    }
+    r.resumeEditor(saved);
+    r.pingToast("Payment did not go through. Your square and design are still here.");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reservations.resumable, reservations.loaded, reservations.reserved]);
 
   useEffect(() => {
     if (reservations.checkoutError) r.pingToast(reservations.checkoutError);
