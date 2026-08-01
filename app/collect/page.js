@@ -1,13 +1,18 @@
 import Link from "next/link";
 import { query } from "../../lib/db";
+import { fmt } from "../../lib/zones";
 import { RAINBOW_GRADIENT } from "../../lib/brand";
 import CollectForm from "./CollectForm";
 
 // Where a buyer lands after paying, via the relay's accept redirect.
 //
-// Two jobs: confirm the payment, and collect the address. The address is asked
-// for here rather than at checkout because it is not needed to take the money,
-// and every extra field before a card costs conversions.
+// Two jobs: confirm the payment, and find out how the shirt reaches them. The
+// address is asked for here rather than at checkout because it is not needed to
+// take the money, and every extra field before a card costs conversions.
+//
+// Built dark, like the rest of the site. It was light originally, which made
+// the one page a buyer sees straight after paying look like it belonged to a
+// different website.
 //
 // Must never be cached: it shows one specific buyer's order status.
 export const dynamic = "force-dynamic";
@@ -16,7 +21,21 @@ export const metadata = {
   title: "Your square is confirmed · Hout Bay United FC",
 };
 
-const wrap = { maxWidth: 620, margin: "0 auto", padding: "48px 22px 72px" };
+const card = {
+  background: "#10203a",
+  border: "1px solid #24405f",
+  borderRadius: 20,
+  padding: 26,
+};
+
+const statLabel = {
+  fontSize: 11,
+  letterSpacing: ".1em",
+  textTransform: "uppercase",
+  color: "#8b8b93",
+  fontWeight: 800,
+  marginBottom: 5,
+};
 
 export default async function CollectPage({ searchParams }) {
   const sp = await searchParams;
@@ -30,7 +49,8 @@ export default async function CollectPage({ searchParams }) {
       const { rows } = await query(
         `select m_payment_id, buyer_name, shirt_size, status,
                 count(*)::int as cells, max(order_amount) as amount,
-                bool_or(buyer_address is not null) as has_address
+                bool_or(buyer_address is not null) as has_address,
+                bool_or(ship_overseas) as overseas
            from squares
           where m_payment_id = $1
           group by m_payment_id, buyer_name, shirt_size, status`,
@@ -44,111 +64,138 @@ export default async function CollectPage({ searchParams }) {
   }
 
   const paid = order?.status === "paid";
+  const firstName = order?.buyer_name ? order.buyer_name.split(" ")[0] : "";
 
-  // Assembled here rather than inline in the JSX. Interpolating these pieces
-  // between tags puts a newline either side of each expression, and JSX turns
-  // those into spaces, so it rendered as "confirmed , and ... shirt ." with
-  // gaps before the punctuation. Same trap that once produced "free shirt.Once".
+  // Built here, not inline in the JSX, because interpolating between tags puts
+  // a newline either side of each expression and JSX turns those into spaces.
   const confirmedLine = paid
     ? [
-        order.buyer_name ? `${order.buyer_name.split(" ")[0]}, your` : "Your",
-        order.cells > 1 ? `${order.cells} squares are confirmed` : "square is confirmed",
+        firstName ? `${firstName}, your` : "Your",
+        order.cells > 1 ? `${order.cells} squares are` : "square is",
+        "confirmed and live on the kit",
         order.shirt_size ? `, and we have you down for a size ${order.shirt_size} shirt.` : ".",
       ]
         .join(" ")
-        .replace(" ,", ",") + " One last thing and you are done."
+        .replace(" ,", ",")
     : "";
 
   return (
-    <div style={wrap}>
-      <div
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 10,
-          fontSize: 12,
-          fontWeight: 800,
-          letterSpacing: ".18em",
-          textTransform: "uppercase",
-          color: "#8b8b93",
-          marginBottom: 18,
-        }}
-      >
-        <span style={{ width: 26, height: 3, borderRadius: 2, background: RAINBOW_GRADIENT }} />
-        {paid ? "Payment confirmed" : "Your order"}
-      </div>
-
-      <h1 style={{ fontSize: "clamp(30px,5vw,46px)", fontWeight: 900, margin: "0 0 14px", letterSpacing: "-.02em", lineHeight: 1.05 }}>
-        {paid ? "You're on the shirt." : "Thanks for your order."}
-      </h1>
-
-      {paid ? (
-        <p style={{ fontSize: 16.5, lineHeight: 1.6, color: "#4b5563", margin: "0 0 26px" }}>
-          {confirmedLine}
-        </p>
-      ) : lookupFailed ? (
-        <p style={{ fontSize: 16.5, lineHeight: 1.6, color: "#4b5563", margin: "0 0 26px" }}>
-          We could not load your order just now. Your payment is safe, and nothing
-          is lost. Please try this link again shortly.
-        </p>
-      ) : (
-        <p style={{ fontSize: 16.5, lineHeight: 1.6, color: "#4b5563", margin: "0 0 26px" }}>
-          We are still confirming your payment with Netcash. This usually takes a
-          few seconds. Refresh this page in a moment and your square will be
-          confirmed here.
-        </p>
-      )}
-
-      {/* Said plainly and before the form, because someone typing an address
-          reasonably assumes a parcel is coming. It is not. */}
-      <div
-        style={{
-          background: "#f4f6f8",
-          border: "1.5px solid #dfe3e8",
-          borderRadius: 16,
-          padding: "18px 20px",
-          marginBottom: 26,
-          lineHeight: 1.55,
-          color: "#374151",
-          fontSize: 14.5,
-        }}
-      >
-        <strong style={{ color: "#12151c" }}>Shirts are collected, not posted.</strong>{" "}
-        We will let you know once all 500 squares have sold and the shirts have
-        been printed, and arrange a time and place for you to collect yours. Your
-        address is for our records and to help us identify you at handover.
-        <div style={{ marginTop: 10 }}>
-          Outside South Africa? Tick the box below and we will post it to you
-          instead, and be in touch about the postage.
-        </div>
-      </div>
-
-      {paid && order.has_address ? (
+    <div style={{ minHeight: "100vh", padding: "52px 22px 80px" }}>
+      <div style={{ maxWidth: 620, margin: "0 auto" }}>
         <div
-          role="status"
           style={{
-            background: "#eefaf1",
-            border: "1.5px solid #9fe3b8",
-            borderRadius: 14,
-            padding: "18px 20px",
-            color: "#14532d",
-            fontWeight: 700,
-            lineHeight: 1.5,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 10,
+            fontSize: 12,
+            fontWeight: 800,
+            letterSpacing: ".18em",
+            textTransform: "uppercase",
+            color: "#8b8b93",
+            marginBottom: 18,
           }}
         >
-          We already have your details. Nothing more to do.
-          <div style={{ fontWeight: 500, marginTop: 6, color: "#166534" }}>
-            We will be in touch once all 500 squares are sold.
-          </div>
+          <span style={{ width: 26, height: 3, borderRadius: 2, background: RAINBOW_GRADIENT }} />
+          {paid ? "Payment confirmed" : "Thanks for your order"}
         </div>
-      ) : paid ? (
-        <CollectForm reference={order.m_payment_id} name={order.buyer_name} />
-      ) : null}
 
-      <div style={{ marginTop: 34, fontSize: 14 }}>
-        <Link href="/" style={{ color: "#4b5563", fontWeight: 700 }}>
-          Back to the shirt
-        </Link>
+        <h1
+          style={{
+            fontSize: "clamp(32px,6vw,54px)",
+            fontWeight: 900,
+            margin: "0 0 16px",
+            letterSpacing: "-.02em",
+            lineHeight: 1.02,
+            textTransform: "uppercase",
+          }}
+        >
+          {paid ? "You're on the shirt." : firstName ? `Thank you, ${firstName}.` : "Thank you."}
+        </h1>
+
+        {paid ? (
+          <>
+            <p style={{ fontSize: 17, lineHeight: 1.6, color: "#b9bac2", margin: "0 0 26px" }}>
+              {confirmedLine}
+            </p>
+
+            <div
+              style={{
+                ...card,
+                marginBottom: 22,
+                display: "grid",
+                gap: 16,
+                gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))",
+              }}
+            >
+              <div>
+                <div style={statLabel}>{order.cells > 1 ? "Squares" : "Square"}</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: "#eef1f6" }}>{order.cells}</div>
+              </div>
+              <div>
+                <div style={statLabel}>Paid</div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: "#8bf0b0" }}>
+                  R{fmt(Number(order.amount) || 0)}
+                </div>
+              </div>
+              <div>
+                <div style={statLabel}>Reference</div>
+                <div
+                  style={{
+                    fontSize: 12.5,
+                    fontWeight: 700,
+                    color: "#cfd0d6",
+                    fontFamily: "ui-monospace,monospace",
+                    overflowWrap: "break-word",
+                  }}
+                >
+                  {order.m_payment_id}
+                </div>
+              </div>
+            </div>
+
+            {order.has_address ? (
+              <div style={{ ...card, borderColor: "#2f6b46" }}>
+                <div style={{ fontSize: 19, fontWeight: 900, color: "#8bf0b0", marginBottom: 8 }}>
+                  That&apos;s everything.
+                </div>
+                <div style={{ color: "#b9bac2", fontSize: 15.5, lineHeight: 1.55 }}>
+                  {order.overseas
+                    ? "We have your address and we know you're overseas. Once all 500 squares are sold and the shirts are printed, we'll be in touch about posting yours."
+                    : "We have your details. Once all 500 squares are sold and the shirts are printed, we'll be in touch to arrange collection."}
+                </div>
+              </div>
+            ) : (
+              <div style={card}>
+                <CollectForm reference={order.m_payment_id} name={order.buyer_name} />
+              </div>
+            )}
+          </>
+        ) : lookupFailed ? (
+          <div style={card}>
+            <p style={{ fontSize: 16.5, lineHeight: 1.6, color: "#b9bac2", margin: 0 }}>
+              We couldn&apos;t load your order just now. Your payment is safe and
+              nothing is lost. Please open this link again shortly.
+            </p>
+          </div>
+        ) : (
+          <div style={card}>
+            <p style={{ fontSize: 16.5, lineHeight: 1.6, color: "#b9bac2", margin: "0 0 14px" }}>
+              We&apos;re confirming your payment with Netcash now. This usually
+              takes a few seconds.
+            </p>
+            <p style={{ fontSize: 16.5, lineHeight: 1.6, color: "#b9bac2", margin: 0 }}>
+              Refresh this page in a moment and your square will be confirmed
+              here. You&apos;ll get an email either way, so nothing depends on
+              you keeping this page open.
+            </p>
+          </div>
+        )}
+
+        <div style={{ marginTop: 36, fontSize: 14 }}>
+          <Link href="/" style={{ color: "#8b8b93", fontWeight: 700 }}>
+            &larr; Back to the shirt
+          </Link>
+        </div>
       </div>
     </div>
   );
