@@ -8,6 +8,11 @@ import { redirect } from "next/navigation";
 // which shows the actual toast/notice.
 export default async function CheckoutSuccess({ searchParams }) {
   const sp = await searchParams;
-  const ref = sp?.ref ? `&ref=${encodeURIComponent(sp.ref)}` : "";
-  redirect(`/?checkout=success${ref}`);
+  const ref = typeof sp?.ref === "string" ? sp.ref.trim() : "";
+  // With a reference we can show the buyer their own order and ask for the
+  // address we still need, so send them there rather than to a toast on the
+  // home page. Without one there is nothing to look up, so fall back to the
+  // old behaviour.
+  if (ref) redirect(`/collect?ref=${encodeURIComponent(ref)}`);
+  redirect("/?checkout=success");
 }

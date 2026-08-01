@@ -75,6 +75,25 @@ create table if not exists squares (
 --
 -- Existing rows predate these columns: run scripts/backfill-thumbnails.mjs once
 -- after applying this file, or already-sold squares render as blank blocks.
+-- Buyer details.
+--
+-- Name and shirt size are collected at checkout alongside email and phone,
+-- because a square comes with a shirt and a size guessed later is a shirt
+-- printed wrong.
+--
+-- The address is collected AFTER payment, on /collect, for two reasons: it is
+-- one more field between a willing buyer and a card, and it is not needed to
+-- take the money. Shirts are collected in person rather than posted, so the
+-- address is for the club's records and for identifying the buyer at handover,
+-- not for delivery.
+--
+-- All nullable: rows created before these columns existed are still valid, and
+-- a buyer who never returns to /collect still has a paid square.
+alter table squares add column if not exists buyer_name text;
+alter table squares add column if not exists shirt_size text;
+alter table squares add column if not exists buyer_address text;
+alter table squares add column if not exists details_completed_at timestamptz;
+
 alter table squares add column if not exists content_thumb bytea;
 alter table squares add column if not exists content_meta jsonb;
 

@@ -135,6 +135,8 @@ export default function Campaign() {
           backToEdit={r.backToEdit}
           goDetails={r.goDetails}
           backToReview={r.backToReview}
+          onNameInput={r.onNameInput}
+          onSizeChange={r.onSizeChange}
           onEmailInput={r.onEmailInput}
           onPhoneInput={r.onPhoneInput}
           onReviewMove={r.onReviewMove}
