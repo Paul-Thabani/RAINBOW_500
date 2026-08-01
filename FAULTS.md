@@ -19,6 +19,30 @@ Rules for this file, also stated in CLAUDE.md:
 
 ## Fixed
 
+### Two forward buttons refused in total silence (#48)
+
+Hit testing proves a press lands. It cannot prove anything happens, so a control with a
+missing or broken handler passes every check before this one. Pressing all 25 controls
+for real and comparing a page fingerprint before and after found six with no change:
+four correct (pressing an already-selected tab) and two faults.
+
+`See how it looks` was styled identically to `Cancel`, white outline with `cursor:
+pointer` and no `aria-disabled`, while `goReview` silently refused when the square had
+nothing on it. `Continue` did grey out but was equally silent, because its guard lived in
+the modal as `if (canProceed) goDetails()`, so a blocked press never reached the hook and
+could never explain itself.
+
+- before: See how it looks looks enabled, nothing happens, nothing said. Continue greys
+  out, nothing happens, nothing said.
+- after: both greyed and `aria-disabled`, both still keyboard reachable and pressable,
+  and both say "Add a logo, a message or a drawing first."
+
+One guard now, in `goReview` and `goDetails`, that both refuses and explains.
+
+The same audit found the size selector said which half was chosen with colour and
+nothing else. It is the control that picks what you are buying, so it now carries
+`aria-pressed`.
+
 ### The hero glow ate the bottom of every header control (#46)
 
 Found by building the audit that #44 showed was missing: not whether a control looks
@@ -226,12 +250,17 @@ Recorded because each of these produced a fault that looked fine on inspection.
 4. **Scale physical sizes by the torso, not the whole render.** The sleeves add 63% to
    the width, so the wrong denominator understates a square by a third. This one has
    now been got wrong twice.
-5. **A 200 on `/` does not mean the site works.** The page and the API can both be
+5. **A press landing is not a press working.** Hit testing proves the click reaches the
+   element. Only pressing the control and observing that something changed proves a
+   handler exists and runs. And a control that refuses must say why: silence is the worst
+   outcome for somebody who is not confident or does not read much English, because there
+   is nothing to work out what went wrong from.
+6. **A 200 on `/` does not mean the site works.** The page and the API can both be
    healthy while the stylesheet 500s and the whole site renders unstyled. Check the
    assets the HTML actually asks for: `node scripts/verify-deploy.mjs <url>`.
-6. **Never leave `.next` on a branch build.** It is shared with the running server, so
+7. **Never leave `.next` on a branch build.** It is shared with the running server, so
    building a branch here breaks live until main is rebuilt. If a measurement suddenly
    stops reproducing, check this before believing it.
-7. **`TOTAL_SQUARES` is computed.** Any change to a box, column count, clearance or
+8. **`TOTAL_SQUARES` is computed.** Any change to a box, column count, clearance or
    mask moves the campaign's headline number. It is a check, not a claim, so read it
    after touching the grid.
