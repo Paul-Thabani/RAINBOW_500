@@ -8,6 +8,7 @@ import {
   cellKey,
   pendingEntries,
   zoneLabel,
+  SHIRT_SIZES,
   PRICE_PER_SPOT,
   BLOCK_PRICE,
 } from "../../../lib/zones";
@@ -15,6 +16,7 @@ import {
 // How long a started checkout holds its cells before the sweep below releases
 // them. Kept in step with the same interval in the claimed_squares view.
 const CHECKOUT_WINDOW = "20 minutes";
+
 
 const INSERT_COLUMNS = [
   "block_id",
@@ -29,8 +31,10 @@ const INSERT_COLUMNS = [
   "content_meta",
   "fill",
   "order_amount",
+  "buyer_name",
   "buyer_email",
   "buyer_phone",
+  "shirt_size",
   "status",
 ];
 
@@ -42,7 +46,7 @@ export async function POST(request) {
     return Response.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const { zoneId, col, row, size, big, slots, email, phone } = body || {};
+  const { zoneId, col, row, size, big, slots, name, email, phone, shirtSize } = body || {};
   const zone = getZone(zoneId);
   if (!zone || typeof col !== "number" || typeof row !== "number" || (size !== 1 && size !== 4)) {
     return Response.json({ error: "Invalid square selection" }, { status: 400 });
@@ -59,13 +63,23 @@ export async function POST(request) {
   if (slots.some((s) => s && s.type === "image" && typeof s.src === "string" && s.src.length > MAX_CONTENT_LENGTH)) {
     return Response.json({ error: "That image is too large, please use a smaller file" }, { status: 400 });
   }
+  const buyerName = typeof name === "string" ? name.trim() : "";
   const buyerEmail = typeof email === "string" ? email.trim() : "";
   const buyerPhone = typeof phone === "string" ? phone.trim() : "";
+  const buyerSize = typeof shirtSize === "string" ? shirtSize.trim().toUpperCase() : "";
+  if (buyerName.length < 2) {
+    return Response.json({ error: "Enter your name" }, { status: 400 });
+  }
   if (!/^\S+@\S+\.\S+$/.test(buyerEmail)) {
     return Response.json({ error: "Enter a valid email address" }, { status: 400 });
   }
   if (buyerPhone.replace(/[^0-9]/g, "").length < 7) {
     return Response.json({ error: "Enter a valid phone number" }, { status: 400 });
+  }
+  // Validated against the same list the form offers, so a hand-rolled request
+  // cannot store a size the club can't actually print.
+  if (!SHIRT_SIZES.includes(buyerSize)) {
+    return Response.json({ error: "Choose your shirt size" }, { status: 400 });
   }
 
   const blockId = crypto.randomUUID();
@@ -175,8 +189,10 @@ export async function POST(request) {
         e.contentMeta,
         e.fill,
         amount,
+        buyerName,
         buyerEmail,
         buyerPhone,
+        buyerSize,
         "pending",
       ].map((v) => {
         values.push(v);

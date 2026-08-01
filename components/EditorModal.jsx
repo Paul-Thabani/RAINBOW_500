@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { fmt, spotColor, pendingEntries, getZone, zonesFor } from "../lib/useRainbow500";
+import { fmt, spotColor, pendingEntries, getZone, zonesFor, SHIRT_SIZES } from "../lib/useRainbow500";
 import { RegionOverlay } from "./ShirtPanel";
 import DoodleCanvas from "./DoodleCanvas";
 import { RAINBOW_GRADIENT, BUTTON_SURFACE_ON_LIGHT, BUTTON_INK } from "../lib/brand";
@@ -329,6 +329,8 @@ export default function EditorModal({
   backToEdit,
   goDetails,
   backToReview,
+  onNameInput,
+  onSizeChange,
   onEmailInput,
   onPhoneInput,
   onReviewMove,
@@ -339,6 +341,8 @@ export default function EditorModal({
   const [logoDragOver, setLogoDragOver] = useState(false);
   const dialogRef = useRef(null);
   const tabRefs = useRef({});
+  const nameRef = useRef(null);
+  const sizeRef = useRef(null);
   const emailRef = useRef(null);
   const phoneRef = useRef(null);
 
@@ -428,9 +432,11 @@ export default function EditorModal({
   const hasContent = ed.slots.some(Boolean);
   const activeContent = ed.slots[ed.active];
   const canProceed = hasContent && !isCheckingOut;
+  const nameValid = (ed.name || "").trim().length >= 2;
+  const sizeValid = SHIRT_SIZES.includes((ed.shirtSize || "").toUpperCase());
   const emailValid = /^\S+@\S+\.\S+$/.test((ed.email || "").trim());
   const phoneValid = (ed.phone || "").replace(/[^0-9]/g, "").length >= 7;
-  const canSubmit = emailValid && phoneValid && !isCheckingOut;
+  const canSubmit = nameValid && sizeValid && emailValid && phoneValid && !isCheckingOut;
 
   // "Claim" throughout, matching the hero and the section heading. The flow used
   // to say claim, choose, reserve and make it yours for the same single action,
@@ -460,7 +466,11 @@ export default function EditorModal({
     // The button is aria-disabled rather than disabled, so it stays in the tab
     // order and can be found before the form is complete. Pressing it early
     // should not be silent: send focus to whichever field is holding it up.
-    if (!emailValid && emailRef.current) emailRef.current.focus();
+    // Ordered top to bottom so focus lands on the first field the buyer has
+    // not filled, not an arbitrary one further down the form.
+    if (!nameValid && nameRef.current) nameRef.current.focus();
+    else if (!sizeValid && sizeRef.current) sizeRef.current.focus();
+    else if (!emailValid && emailRef.current) emailRef.current.focus();
     else if (!phoneValid && phoneRef.current) phoneRef.current.focus();
   };
 
@@ -765,6 +775,49 @@ export default function EditorModal({
                 accessible name rather than just sitting above it, and
                 autoComplete so a phone offers to fill both. On an audience that
                 is 82% mobile, autofill is free conversion. */}
+            <div style={{ marginBottom: 16 }}>
+              <label
+                htmlFor="buyer-name"
+                style={{ display: "block", fontSize: 12, fontWeight: 800, color: "#12151c", marginBottom: 6 }}
+              >
+                Full name
+              </label>
+              <input
+                ref={nameRef}
+                id="buyer-name"
+                name="name"
+                type="text"
+                autoComplete="name"
+                value={ed.name || ""}
+                onChange={onNameInput}
+                placeholder="e.g. Thandi Mokoena"
+                style={inputStyle}
+              />
+            </div>
+            {/* Asked for here rather than chased by email afterwards. Every
+                square comes with a shirt, and a size guessed later is a shirt
+                printed wrong. */}
+            <div style={{ marginBottom: 16 }}>
+              <label
+                htmlFor="buyer-size"
+                style={{ display: "block", fontSize: 12, fontWeight: 800, color: "#12151c", marginBottom: 6 }}
+              >
+                Shirt size
+              </label>
+              <select
+                ref={sizeRef}
+                id="buyer-size"
+                name="shirtSize"
+                value={ed.shirtSize || ""}
+                onChange={onSizeChange}
+                style={{ ...inputStyle, appearance: "auto" }}
+              >
+                <option value="">Choose a size</option>
+                {SHIRT_SIZES.map((sz) => (
+                  <option key={sz} value={sz}>{sz}</option>
+                ))}
+              </select>
+            </div>
             <div style={{ marginBottom: 16 }}>
               <label
                 htmlFor="buyer-email"

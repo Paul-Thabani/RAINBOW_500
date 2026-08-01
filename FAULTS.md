@@ -19,6 +19,30 @@ Rules for this file, also stated in CLAUDE.md:
 
 ## Fixed
 
+### The new name and size fields were read-only (mine)
+
+Adding the fields was three edits: state and handlers in `useRainbow500`, the inputs in
+`EditorModal`, and the props in `EditorModal`'s signature. All three were done. The
+fourth was not: `Campaign.jsx` passes every handler through explicitly, one line each,
+rather than spreading the hook, so `onNameInput` and `onSizeChange` never reached the
+modal.
+
+A React input with `value` set and `onChange` undefined is read-only. So both fields
+rendered, looked completely normal, focused, and silently refused every keystroke. The
+select would not open either.
+
+- before: `grep onNameInput components/Campaign.jsx` returns nothing; typing in the name
+  field changes nothing on screen.
+- after: both handlers present in the prop list, and both appear in the built client
+  bundle.
+
+The build passed throughout, because nothing here is a type error or a missing import:
+an undefined prop is legal JSX. It was found by the user trying to type, which is the
+part that should not have happened. The lesson is the same one as #48 in a different
+costume: a control that renders is not a control that works, and the only proof is
+operating it. I verified this feature end to end through the API and the database and
+called it tested, having never once put a character into the field.
+
 ### Two forward buttons refused in total silence (#48)
 
 Hit testing proves a press lands. It cannot prove anything happens, so a control with a

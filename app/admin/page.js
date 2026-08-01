@@ -30,8 +30,11 @@ function groupByBlock(rows) {
       map.set(r.block_id, {
         blockId: r.block_id,
         reference: r.m_payment_id,
+        buyerName: r.buyer_name,
         buyerEmail: r.buyer_email,
         buyerPhone: r.buyer_phone,
+        shirtSize: r.shirt_size,
+        buyerAddress: r.buyer_address,
         amount: Number(r.order_amount) || 0,
         status: r.status,
         createdAt: r.created_at,
@@ -267,6 +270,8 @@ export default async function AdminPage() {
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, minWidth: 1160 }}>
             <thead>
               <tr style={{ background: "#10203a" }}>
+                <th style={th}>Name</th>
+                <th style={th}>Size</th>
                 <th style={th}>Email</th>
                 <th style={th}>Phone</th>
                 <th style={th}>Zone</th>
@@ -283,7 +288,18 @@ export default async function AdminPage() {
             <tbody>
               {orders.map((o) => (
                 <tr key={o.blockId} className="rb-admin-row" style={{ borderBottom: "1px solid #1a3050" }}>
-                  <td style={{ ...td, fontWeight: 700, color: "#eef1f6" }}>{o.buyerEmail || "-"}</td>
+                  <td style={{ ...td, fontWeight: 700, color: "#eef1f6" }}>
+                    {o.buyerName || "-"}
+                    {/* Shown under the name because fulfilment reads down the
+                        list looking for who has not sent an address yet. */}
+                    {o.status === "paid" && (
+                      <div style={{ fontSize: 11, fontWeight: 600, marginTop: 3, color: o.buyerAddress ? "#8bf0b0" : "#fdba74" }}>
+                        {o.buyerAddress ? "address on file" : "no address yet"}
+                      </div>
+                    )}
+                  </td>
+                  <td style={{ ...td, fontWeight: 800, color: "#a5c8ff", whiteSpace: "nowrap" }}>{o.shirtSize || "-"}</td>
+                  <td style={{ ...td, color: "#cfd0d6" }}>{o.buyerEmail || "-"}</td>
                   <td style={{ ...td, color: "#cfd0d6", fontVariantNumeric: "tabular-nums" }}>{o.buyerPhone || "-"}</td>
                   <td style={{ ...td, color: "#cfd0d6" }}>{zoneLabel(o.zoneId)}</td>
                   <td style={{ ...td, fontFamily: "ui-monospace,monospace", fontSize: 12.5, color: "#cfd0d6" }}>
