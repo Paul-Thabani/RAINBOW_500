@@ -96,10 +96,12 @@ export default function KitSection({
       >
         <span style={{ fontWeight: 800, color: "#e7e7ea", fontSize: 15 }}>Choose:</span>
         <div style={{ display: "inline-flex", background: "#081120", border: "1px solid #24405f", borderRadius: 999, padding: 4 }}>
-          <button type="button" onClick={setSize1} style={segStyle(spotSize === 1)}>
+          {/* aria-pressed because colour was the only thing saying which half is chosen,
+              and this is the control that picks what you are buying. */}
+          <button type="button" onClick={setSize1} aria-pressed={spotSize === 1} style={segStyle(spotSize === 1)}>
             1 square · R{fmt(price)}
           </button>
-          <button type="button" onClick={setSize4} style={segStyle(spotSize === 4)}>
+          <button type="button" onClick={setSize4} aria-pressed={spotSize === 4} style={segStyle(spotSize === 4)}>
             Block of 4 · R{fmt(blockPrice)}
           </button>
         </div>
