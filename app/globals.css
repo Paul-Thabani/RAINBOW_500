@@ -254,6 +254,14 @@ h2 {
    both comfortably past the 44px a finger needs. */
 .rb-shirt-switch {
   position: absolute;
+  /* Above the panel's own layers, or it is not clickable at all.
+     ShirtPanel puts a full-panel click catcher at z-index 5 (the thing that turns a
+     tap anywhere on the shirt into a cell selection). This button is absolutely
+     positioned in the same stacking context with no z-index, so it resolved to 0 and
+     sat underneath that catcher: the hit test at its centre returned the overlay, not
+     the button, and pressing the back of the shirt did nothing at either viewport.
+     6 is one above the catcher, which is the highest layer in the panel. */
+  z-index: 6;
   top: 10px;
   right: 10px;
   width: 108px;
