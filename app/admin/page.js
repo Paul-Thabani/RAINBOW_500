@@ -217,6 +217,14 @@ export default async function AdminPage() {
               Admin · live orders
             </div>
             <h1 style={{ fontSize: 32, fontWeight: 900, margin: 0, letterSpacing: "-.02em" }}>Legacy 500 Orders</h1>
+            <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
+              <a href="/admin/export" style={{ fontSize: 13, fontWeight: 700, color: "#0a0a0c", background: "#a5c8ff", borderRadius: 999, padding: "9px 16px" }}>
+                Export orders (CSV)
+              </a>
+              <a href="/admin/export?format=tar" style={{ fontSize: 13, fontWeight: 700, color: "#cfd0d6", border: "1.5px solid #24405f", borderRadius: 999, padding: "9px 16px" }}>
+                Export artwork (.tar)
+              </a>
+            </div>
             <p style={{ color: "#8b8b93", margin: "6px 0 0", fontSize: 15 }}>
               Every checkout attempt, confirmed or not - newest first.
             </p>
@@ -290,7 +298,9 @@ export default async function AdminPage() {
               {orders.map((o) => (
                 <tr key={o.blockId} className="rb-admin-row" style={{ borderBottom: "1px solid #1a3050" }}>
                   <td style={{ ...td, fontWeight: 700, color: "#eef1f6" }}>
-                    {o.buyerName || "-"}
+                    <a href={`/admin/order/${o.reference}`} style={{ color: "#eef1f6", textDecoration: "underline", textDecorationColor: "#24405f" }}>
+                      {o.buyerName || "(open)"}
+                    </a>
                     {/* Shown under the name because fulfilment reads down the
                         list looking for who has not sent an address yet. */}
                     {o.status === "paid" && (
