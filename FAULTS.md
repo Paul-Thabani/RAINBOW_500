@@ -19,6 +19,37 @@ Rules for this file, also stated in CLAUDE.md:
 
 ## Fixed
 
+### An overseas buyer was stranded on "Redirecting to payment..." (mine)
+
+`checkout()` set `isCheckingOut` true and then awaited `fetch("/api/checkout")` with
+no signal and no timeout. That flag is the only thing driving the button label, so for
+as long as the request was in flight the button read "Redirecting to payment...". A
+request that never came back therefore produced a permanent, silent stall: no error, no
+recovery, no way forward except reloading the page and starting again.
+
+An international supporter hit exactly that around midday on the first day of live
+selling.
+
+- before: `grep -c "signal\|timeout" ` over the checkout fetch returns 0. No checkout
+  POST in the access log between 09:59 and 13:20, so their request never completed,
+  while the button told them a redirect was under way.
+- after: bounded at 30s via AbortController, and an AbortError says "You have not been
+  charged. Please try again." Nothing had reached Netcash, so that is true, and it is
+  the part somebody watching a payment stall most needs to hear.
+
+Contributing cause, also mine: the app was restarted **100 times** during that first
+live day while I deployed changes, and pm2 was in fork mode, where a restart kills
+whatever is in flight. Now cluster mode with two instances, so `pm2 reload` retires them
+one at a time. Measured by hammering the site through a live reload: 60 requests, 60
+200s, 0 failures, where before every restart dropped in-flight work.
+
+No money was at risk: they never reached Netcash, so there was no charge to reconcile
+and no square left held. The cost was a lost sale. The lesson is that "deploy whenever
+a change is ready" stopped being free the moment the site started taking payments, and I
+should have said so on the day rather than after a buyer hit it.
+
+
+
 ### The new name and size fields were read-only (mine)
 
 Adding the fields was three edits: state and handlers in `useRainbow500`, the inputs in
