@@ -703,7 +703,7 @@ export default function EditorModal({
                   />
                   <div style={{ fontSize: 15, fontWeight: 800, color: "#12151c" }}>Upload your logo</div>
                   <div style={{ fontSize: 13, color: "#6b7280", marginTop: 4 }}>
-                    PNG or JPG, or drag a file in. A transparent PNG sits best on the rainbow kit.
+                    PNG or JPG, or drag a file in. Bold, simple shapes print best. Your logo is scaled up to fill the whole square.
                   </div>
                 </label>
               )}
