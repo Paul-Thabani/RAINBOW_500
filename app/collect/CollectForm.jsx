@@ -17,6 +17,7 @@ const inputStyle = {
 
 export default function CollectForm({ reference, name }) {
   const [address, setAddress] = useState("");
+  const [overseas, setOverseas] = useState(false);
   const [state, setState] = useState("idle");
   const [error, setError] = useState("");
 
@@ -31,7 +32,7 @@ export default function CollectForm({ reference, name }) {
       const res = await fetch("/api/collection-details", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ref: reference, address }),
+        body: JSON.stringify({ ref: reference, address, shipOverseas: overseas }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -62,7 +63,9 @@ export default function CollectForm({ reference, name }) {
       >
         Thank you{name ? `, ${name.split(" ")[0]}` : ""}. We have your details.
         <div style={{ fontWeight: 500, marginTop: 6, color: "#166534" }}>
-          We will be in touch once all 500 squares are sold and the shirts have been printed.
+          {overseas
+            ? "We will be in touch once all 500 squares are sold and the shirts have been printed, and we will arrange postage to you."
+            : "We will be in touch once all 500 squares are sold and the shirts have been printed."}
         </div>
       </div>
     );
@@ -86,6 +89,38 @@ export default function CollectForm({ reference, name }) {
         placeholder={"Street address\nSuburb\nCity\nPostal code"}
         style={{ ...inputStyle, resize: "vertical", lineHeight: 1.45 }}
       />
+
+      {/* Asked outright rather than hoping it turns up in the address free text,
+          so fulfilment can filter on it instead of reading all 500. */}
+      <label
+        htmlFor="collect-overseas"
+        style={{
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 10,
+          marginTop: 14,
+          padding: "12px 14px",
+          border: "1.5px solid #d7dbe0",
+          borderRadius: 12,
+          cursor: "pointer",
+          lineHeight: 1.45,
+          fontSize: 14,
+          color: "#374151",
+        }}
+      >
+        <input
+          id="collect-overseas"
+          name="shipOverseas"
+          type="checkbox"
+          checked={overseas}
+          onChange={(e) => setOverseas(e.target.checked)}
+          style={{ marginTop: 2, width: 18, height: 18, flexShrink: 0 }}
+        />
+        <span>
+          <strong style={{ color: "#12151c" }}>I am outside South Africa.</strong>{" "}
+          Please post my shirt to me instead, and get in touch about the postage.
+        </span>
+      </label>
 
       {error && (
         <div role="alert" style={{ marginTop: 10, color: "#b91c1c", fontSize: 13.5, fontWeight: 700 }}>

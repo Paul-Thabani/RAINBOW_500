@@ -25,6 +25,7 @@ export async function POST(request) {
 
   const ref = typeof body?.ref === "string" ? body.ref.trim() : "";
   const address = typeof body?.address === "string" ? body.address.trim() : "";
+  const shipOverseas = body?.shipOverseas === true;
 
   if (!/^[a-f0-9]{20}$/i.test(ref)) {
     return Response.json({ error: "That order reference isn't valid" }, { status: 400 });
@@ -42,10 +43,10 @@ export async function POST(request) {
     // used to scribble on rows that no longer represent a sale.
     const { rowCount } = await query(
       `update squares
-          set buyer_address = $2, details_completed_at = now()
+          set buyer_address = $2, ship_overseas = $3, details_completed_at = now()
         where m_payment_id = $1
           and status = 'paid'`,
-      [ref, address]
+      [ref, address, shipOverseas]
     );
 
     if (rowCount === 0) {
