@@ -37,7 +37,7 @@ export default function DesignNote() {
             // Solid, not the rainbow. At 10px with .16em tracking a gradient gives
             // every letter a different colour, which measured 2.40:1 on its worst
             // stop and is the least legible line on the page. This card carries the
-            // information a buyer most needs to get right (white only, 3cm, bold
+            // information a buyer most needs to get right (white only, 3.5cm, bold
             // shapes), so it is the wrong place to spend legibility on decoration.
             // #e7e7ea is already this card's emphasis colour, so no new colour is
             // introduced, and it measures 13.19:1 on the card's #10203a. The house
@@ -49,8 +49,8 @@ export default function DesignNote() {
           A note from the manufacturer
         </div>
         <div style={{ fontSize: 13.5, lineHeight: 1.5, fontWeight: 600, color: "#b9bac2" }}>
-          One square is roughly <strong style={{ color: "#e7e7ea" }}>3 cm across</strong> on a medium shirt,
-          about the size of a postage stamp. The kit is dye sublimated, which means your artwork is printed
+          One square is about <strong style={{ color: "#e7e7ea" }}>3.5 cm across</strong> on a medium
+          shirt, a bit bigger than a postage stamp. The kit is dye sublimated, which means your artwork is printed
           as <strong style={{ color: "#e7e7ea" }}>white only</strong>: there is no white ink, so the white
           is the fabric itself showing through and the colour is printed around it. Bold, simple shapes
           come out best. Very thin lines and small lettering close up at this size, and colour, shading
