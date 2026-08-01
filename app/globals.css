@@ -221,6 +221,12 @@ h2 {
 .rb-hero-glow {
   position: absolute;
   inset: -12% -8%;
+  /* Decoration must never intercept a press. inset: -12% deliberately overhangs the
+     parent, which is what puts this blurred gradient on top of the header: at 1440px it
+     was swallowing 2 of 5 probe points on all three nav links and on the primary "Join
+     the Legacy 500" button. A control that works sometimes is worse than one that never
+     works, because nobody can tell what they did wrong. */
+  pointer-events: none;
 }
 
 @media (max-width: 900px) {
