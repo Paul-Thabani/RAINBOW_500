@@ -2,7 +2,7 @@ import "./globals.css";
 
 const TITLE = "The Legacy 500 · Hout Bay United FC";
 const DESCRIPTION =
-  "A community club chasing professional football. This season, we're splitting one shirt into 500 squares to raise R1,000,000 for the players who carry Hout Bay's hopes.";
+  "A community club chasing professional football. This season, we're splitting one shirt into 500 squares to raise R1,000,000 that goes into helping the club every year.";
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://shirt.hbufc.co.za";
 
 // This campaign runs on sharing, so a link pasted into WhatsApp rendering as a
