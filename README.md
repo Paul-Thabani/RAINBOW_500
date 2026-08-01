@@ -2,7 +2,7 @@
 
 Next.js version of the "Rainbow 500" kit fundraiser landing page: hero and
 stats sections, a canvas-based fill tracker, and a full customize-a-square
-flow (pick a square or 2x2 block on the shirt, front/back and both sleeves,
+flow (pick a square or 2x2 block on the shirt, front or back,
 add a logo/message/doodle, review with a hover-zoom lens, then pay for it via
 Netcash Pay Now). A square is taken off the board as soon as someone starts
 checking out for it, and only renders their artwork once the payment is
