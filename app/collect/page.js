@@ -117,6 +117,10 @@ export default async function CollectPage({ searchParams }) {
         We will let you know once all 500 squares have sold and the shirts have
         been printed, and arrange a time and place for you to collect yours. Your
         address is for our records and to help us identify you at handover.
+        <div style={{ marginTop: 10 }}>
+          Outside South Africa? Tick the box below and we will post it to you
+          instead, and be in touch about the postage.
+        </div>
       </div>
 
       {paid && order.has_address ? (

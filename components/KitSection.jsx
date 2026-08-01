@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { fmt, zonesFor, occSetFrom, availableSpots, getZone } from "../lib/useRainbow500";
 import ShirtPanel from "./ShirtPanel";
+import ShirtZoom from "./ShirtZoom";
 import DesignNote from "./DesignNote";
 import { RAINBOW_GRADIENT, BUTTON_SURFACE, BUTTON_INK } from "../lib/brand";
 
@@ -42,6 +43,7 @@ export default function KitSection({
   // null means "follow the shirt": the front leads until it is full, then the
   // back does. Once somebody presses the switch their choice sticks.
   const [chosen, setChosen] = useState(null);
+  const [zoomOpen, setZoomOpen] = useState(false);
   const frontHasRoom = useMemo(() => {
     const occ = occSetFrom(reserved);
     return availableSpots(occ, 1).some((sp) => getZone(sp.zoneId)?.panel === "front");
@@ -148,6 +150,29 @@ export default function KitSection({
         Pinch to zoom in on the shirt, then tap the square you want.
       </p>
 
+      {/* The board is the buying surface and its squares are about 100x60px,
+          enough to pick one and nowhere near enough to read what anybody wrote.
+          This is the looking surface. */}
+      <div style={{ textAlign: "center", margin: "0 0 16px" }}>
+        <button
+          type="button"
+          onClick={() => setZoomOpen(true)}
+          style={{
+            cursor: "pointer",
+            fontFamily: "inherit",
+            fontWeight: 800,
+            fontSize: 14,
+            color: "#e7e7ea",
+            background: "transparent",
+            border: "1.5px solid #24405f",
+            borderRadius: 999,
+            padding: "10px 20px",
+          }}
+        >
+          Take a closer look at the squares
+        </button>
+      </div>
+
       {/* One shirt at a time, the other as a thumbnail you press to swap.
           Side by side, each shirt got half the width and every square with it.
           One prominent panel is about 700px on a wide screen against 560px, so a
@@ -187,6 +212,7 @@ export default function KitSection({
       </div>
 
       <DesignNote />
+      {zoomOpen && <ShirtZoom reserved={reserved} onClose={() => setZoomOpen(false)} />}
     </section>
   );
 }

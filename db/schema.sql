@@ -94,6 +94,11 @@ alter table squares add column if not exists shirt_size text;
 alter table squares add column if not exists buyer_address text;
 alter table squares add column if not exists details_completed_at timestamptz;
 
+-- Shirts are collected in person, which does not work for a supporter abroad.
+-- Rather than hoping they mention it in the address free text, /collect asks
+-- outright, so fulfilment can filter on it instead of reading every address.
+alter table squares add column if not exists ship_overseas boolean not null default false;
+
 alter table squares add column if not exists content_thumb bytea;
 alter table squares add column if not exists content_meta jsonb;
 

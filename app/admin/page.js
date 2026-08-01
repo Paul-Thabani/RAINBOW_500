@@ -35,6 +35,7 @@ function groupByBlock(rows) {
         buyerPhone: r.buyer_phone,
         shirtSize: r.shirt_size,
         buyerAddress: r.buyer_address,
+        shipOverseas: r.ship_overseas,
         amount: Number(r.order_amount) || 0,
         status: r.status,
         createdAt: r.created_at,
@@ -293,8 +294,8 @@ export default async function AdminPage() {
                     {/* Shown under the name because fulfilment reads down the
                         list looking for who has not sent an address yet. */}
                     {o.status === "paid" && (
-                      <div style={{ fontSize: 11, fontWeight: 600, marginTop: 3, color: o.buyerAddress ? "#8bf0b0" : "#fdba74" }}>
-                        {o.buyerAddress ? "address on file" : "no address yet"}
+                      <div style={{ fontSize: 11, fontWeight: 600, marginTop: 3, color: !o.buyerAddress ? "#fdba74" : o.shipOverseas ? "#a5c8ff" : "#8bf0b0" }}>
+                        {o.buyerAddress ? (o.shipOverseas ? "POST overseas" : "address on file") : "no address yet"}
                       </div>
                     )}
                   </td>
