@@ -444,8 +444,13 @@ export default function EditorModal({
   const securePriceLabel = ed.size === 4 ? fmt(blockPrice) : fmt(price);
   const continueLabel = "Continue";
   const proceedLabel = isCheckingOut ? "Redirecting to payment..." : `Proceed to payment · R${securePriceLabel}`;
+  // Calls goDetails unconditionally and lets it decide. The guard used to live here as
+  // `if (canProceed) goDetails()`, which meant a blocked press never reached the hook and
+  // so never reached the message explaining why. One guard, in one place, that both
+  // refuses and says why.
   const handleContinue = () => {
-    if (canProceed) goDetails();
+    if (isCheckingOut) return;
+    goDetails();
   };
   const handleProceed = () => {
     if (canSubmit) {
@@ -846,10 +851,26 @@ export default function EditorModal({
                 >
                   Cancel
                 </button>
+                {/* Same treatment as Continue when there is nothing to show yet. It used
+                    to be styled identically to Cancel, fully enabled with cursor:
+                    pointer, while goReview silently refused. aria-disabled rather than
+                    disabled so it stays in the tab order and can still explain itself
+                    when pressed. */}
                 <button
                   type="button"
                   onClick={goReview}
-                  style={{ cursor: "pointer", fontFamily: "inherit", fontWeight: 700, fontSize: 15, color: "#374151", background: "#fff", border: "1.5px solid #e6e8ec", padding: "11px 18px", borderRadius: 999 }}
+                  aria-disabled={!hasContent}
+                  style={{
+                    cursor: hasContent ? "pointer" : "default",
+                    fontFamily: "inherit",
+                    fontWeight: 700,
+                    fontSize: 15,
+                    color: hasContent ? "#374151" : "#9aa1ac",
+                    background: "#fff",
+                    border: `1.5px solid ${hasContent ? "#e6e8ec" : "#eef0f3"}`,
+                    padding: "11px 18px",
+                    borderRadius: 999,
+                  }}
                 >
                   See how it looks
                 </button>
