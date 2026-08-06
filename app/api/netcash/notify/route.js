@@ -1,5 +1,5 @@
 import { query } from "../../../../lib/db";
-import { parseNotifyFields } from "../../../../lib/netcash";
+import { isOurReference, parseNotifyFields } from "../../../../lib/netcash";
 import { sendPaymentConfirmation, sendConflictAlert } from "../../../../lib/mailer";
 import { cellKey } from "../../../../lib/zones";
 
@@ -104,8 +104,31 @@ export async function POST(request) {
     );
 
     if (rows.length === 0) {
-      console.warn("Netcash notify: no squares found for reference", fields.reference);
-      return new Response("OK", { status: 200 }); // acknowledge - nothing to do
+      // Two very different situations, and they were being logged as one.
+      //
+      // The relay broadcasts every notify to this app and to Sonar, so a
+      // callback for one of Sonar's references arrives here on every single one
+      // of their card payments. That is routine, and it was going to stderr,
+      // which is where pm2 sends the error log. The result was that the first
+      // place anyone looks during an incident filled up with the healthy
+      // operation of another app.
+      //
+      // A reference shaped like one of ours with no rows behind it is the
+      // opposite: we minted it, so the rows should exist. That deserves stderr.
+      if (isOurReference(fields.reference)) {
+        console.warn(
+          "Netcash notify: reference",
+          fields.reference,
+          "looks like ours but has no squares - it may have been deleted"
+        );
+      } else {
+        console.log(
+          "Netcash notify: ignoring",
+          fields.reference,
+          "- not one of ours, another app on the shared relay"
+        );
+      }
+      return new Response("OK", { status: 200 }); // acknowledge either way, nothing to do
     }
 
     // An admin cancelled this order from /admin and the buyer paid anyway,
