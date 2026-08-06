@@ -15,6 +15,31 @@ const nextConfig = {
     // whose art changes rarely, and most of the audience is on mobile data.
     minimumCacheTTL: 2592000,
   },
+
+  async headers() {
+    return [
+      {
+        // Files under /public are served by Next with "public, max-age=0", so
+        // every view re-downloaded them. The two the kit customiser uses are
+        // about 540 KB each and were 18.4 MB of real visitor traffic in a
+        // single day, the largest slice of it.
+        //
+        // 30 days, matching the minimumCacheTTL above and for the same reason:
+        // the art on a campaign page changes rarely and most of the audience is
+        // on mobile data.
+        //
+        // Deliberately NOT immutable, unlike the per-square art in
+        // app/api/square/[squareId]/artResponse.js. A square's content is
+        // written once at checkout and genuinely can never change, so immutable
+        // is honest there. These filenames are fixed and a deploy can replace
+        // the bytes behind them, so the browser needs to be able to revalidate.
+        source: "/assets/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=2592000" },
+        ],
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
