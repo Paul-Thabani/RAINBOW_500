@@ -115,16 +115,42 @@ export async function GET(request) {
 
     // One row per square, not per order. A block of four is four things to
     // print, and whoever is at the printer needs all four lines.
+    //
+    // But the money belongs to the order, not to each of its squares. `amount`
+    // used to carry the order total on every row, so a block of four put
+    // R28,000 into a column that should have summed to the R7,000 actually
+    // charged. Whoever adds up that column to reconcile against a Netcash
+    // statement gets a figure that is wrong by more than the order is worth.
+    //
+    // `order_total` now appears once per order, on its first row, and stays
+    // blank on the rest, so the column sums to exactly what was taken.
+    // `squares_in_order` says why a row is blank, so a blank looks deliberate
+    // rather than like missing data.
+    //
+    // Blank, not 0. A complimentary square is genuinely R0, so a zero on a
+    // continuation row would be indistinguishable from a real free placement.
+    const cellsPerOrder = new Map();
+    rows.forEach((r) => {
+      // A big 2x2 is one row covering four cells, so count the span, not the row.
+      const cells = (r.span || 1) ** 2;
+      cellsPerOrder.set(r.block_id, (cellsPerOrder.get(r.block_id) || 0) + cells);
+    });
+    // Keyed on block_id rather than position, because `order by paid_at` can
+    // interleave two orders that settled in the same second.
+    const totalWritten = new Set();
+
     const header = [
       "reference", "buyer_name", "email", "phone", "shirt_size",
       "handover", "address", "panel", "col", "row", "span",
-      "artwork_type", "message", "amount",
+      "artwork_type", "message", "order_total", "squares_in_order",
       // Cash and complimentary squares are entered from /admin rather than
       // bought, so the books do not reconcile against Netcash without these two.
       "payment_method", "placed_by", "paid_at",
     ];
     const lines = [header.join(",")];
     for (const r of rows) {
+      const firstOfOrder = !totalWritten.has(r.block_id);
+      if (firstOfOrder) totalWritten.add(r.block_id);
       lines.push([
         r.m_payment_id,
         r.buyer_name,
@@ -139,7 +165,8 @@ export async function GET(request) {
         r.span,
         r.content?.type || "",
         r.content?.type === "text" ? r.content.text : "",
-        r.order_amount,
+        firstOfOrder ? r.order_amount : "",
+        cellsPerOrder.get(r.block_id),
         r.payment_method,
         r.placed_by,
         r.paid_at ? new Date(r.paid_at).toISOString() : "",

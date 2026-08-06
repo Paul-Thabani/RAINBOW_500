@@ -19,6 +19,60 @@ Rules for this file, also stated in CLAUDE.md:
 
 ## Fixed
 
+### The orders CSV overstated money taken by more than the order was worth (mine)
+
+Found by buying a block of four through the live checkout to test that four squares can
+carry four different logos. They can. What does not survive the test is the export.
+
+`/admin/export` writes one row per square, which is right, because a block of four is
+four things to print. It also wrote `order_amount` on every one of those rows, and
+`order_amount` is the whole order's charge, not the square's share. So one R7,000 block
+put R28,000 into the column you would add up to reconcile against a Netcash statement.
+
+- before: seven paid orders, R19,000 actually taken. Summing the CSV's `amount` column
+  gives **R40,000**, overstating by R21,000. The single block of four accounts for all of
+  it, contributing R28,000 instead of R7,000.
+- after: same seven orders, summing `order_total` gives **R19,000**, matching both
+  `/admin` and `select sum(amt) from (select distinct block_id, order_amount as amt ...)`
+  to the rand.
+
+Both measurements are over the six real card sales plus the test block. The test block
+was deleted afterwards, so the board is back to six orders and R12,000; to reproduce the
+before figure you have to put a multi-cell order back on it.
+
+Verified against a build in a throwaway worktree on its own port, not against live,
+because building a branch in this checkout replaces the `.next` the running server is
+using. That is trap 7 below.
+
+`order_total` is now written once per order, on its first row, and left blank on the
+rest, with a `squares_in_order` column so a blank reads as deliberate. Blank rather than
+0, because a complimentary placement is genuinely R0 and a zero on a continuation row
+would be indistinguishable from one. Keyed on `block_id` rather than row position,
+because `order by paid_at` can interleave two orders that settled in the same second.
+
+The column was renamed from `amount` on purpose. A column whose meaning changes should
+not keep its old name, or the next person sums it out of habit.
+
+Everything else about the block of four was correct and is worth recording, because the
+export was the only thing wrong: four rows at span 1 each with its own artwork, four
+distinct thumbnails (four distinct md5s), R7,000 once in `/admin` and once on the order
+page, "4 squares" in the receipt, and all four cells live on the public board. Settled
+through `pay.hbufc.co.za`, delivered to both targets on the first attempt with a 200.
+
+### The success modal thanked people for supporting the wrong campaign (mine)
+
+The campaign is the **Legacy 500** in all 20-odd user-facing places. Three files still
+said "Rainbow 500", the repo's original name, and one of them was the modal a buyer sees
+in the second after their payment goes through.
+
+- before: `grep -rn "Rainbow 500"` over components and app returns
+  `components/PaymentSuccessModal.jsx:53` and `middleware.js:25`.
+- after: returns nothing outside `README.md`, which describes the repository rather than
+  addressing a buyer.
+
+Trivial to fix and worth logging anyway: it was in the highest-attention sentence on the
+site, and it had been live through all seven paid orders.
+
 ### An overseas buyer was stranded on "Redirecting to payment..." (mine)
 
 `checkout()` set `isCheckingOut` true and then awaited `fetch("/api/checkout")` with

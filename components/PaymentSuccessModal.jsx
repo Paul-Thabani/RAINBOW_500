@@ -50,7 +50,7 @@ export default function PaymentSuccessModal({ open, onClose }) {
         </div>
         <div style={{ fontSize: 20, fontWeight: 900, marginBottom: 8 }}>Payment successful!</div>
         <div style={{ fontSize: 14, color: "#6b7280", fontWeight: 600, lineHeight: 1.5, marginBottom: 24 }}>
-          Thank you for supporting Rainbow 500. Your square is being confirmed now, we&apos;ll email your receipt shortly.
+          Thank you for supporting the Legacy 500. Your square is being confirmed now, we&apos;ll email your receipt shortly.
         </div>
         <button
           type="button"

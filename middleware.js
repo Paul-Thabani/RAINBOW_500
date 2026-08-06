@@ -22,7 +22,7 @@ export function middleware(request) {
 
   return new NextResponse("Authentication required", {
     status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="Rainbow 500 admin"' },
+    headers: { "WWW-Authenticate": 'Basic realm="Legacy 500 admin"' },
   });
 }
 
