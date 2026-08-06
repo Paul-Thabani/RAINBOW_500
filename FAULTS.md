@@ -19,6 +19,40 @@ Rules for this file, also stated in CLAUDE.md:
 
 ## Fixed
 
+### Another app's healthy payments filled this one's error log (mine)
+
+The Pay Now service key is shared with Sonar, and `pay.hbufc.co.za` broadcasts every
+notify to both apps, because `m10` tags only the Accept and Decline URLs and never the
+server-to-server callback. So this app is handed one of Sonar's references on every
+Sonar card payment and has to shrug it off, which it did, correctly, with a 200.
+
+It then logged "no squares found for reference" through `console.warn`. `console.warn`
+writes to stderr, and pm2 sends stderr to the error log, so the first place anyone looks
+during an incident was accumulating a line for each successful payment taken by a
+different application.
+
+- before: the live error log holds three lines. **Two of them** are Sonar references
+  arriving via the relay, and neither indicates anything wrong with anything.
+- after: those go to stdout as `ignoring <ref> - not one of ours`, and the error log
+  holds only the third line. Verified by running the branch with stdout and stderr
+  redirected to separate files: two Sonar-shaped references landed in the stdout file,
+  and an our-shaped reference with no rows landed in the stderr file.
+
+The two cases were previously indistinguishable, which is the actual fault. A reference
+shaped like one of ours with no rows behind it means we minted it and the rows have gone,
+and that does deserve stderr. It now says so in different words on a different stream.
+
+`isOurReference` sits beside `generateReference` so the shape cannot drift from it: 10
+random bytes as hex is exactly 20 lowercase hex characters, and Sonar's are UUIDs.
+Checked against every reference either app has actually produced, including the
+dashes-stripped UUID (32 hex) and the `X\`` scanner probe, which both correctly read as
+not ours.
+
+It only ever picks a log level. Both paths still acknowledge with a 200, so a wrong
+guess cannot lose a payment. Confirmed no regression on the found-rows path: a replayed
+notify for an already-paid reference still returns 200 and leaves every row, including
+`pf_payment_id`, byte-identical.
+
 ### The orders CSV overstated money taken by more than the order was worth (mine)
 
 Found by buying a block of four through the live checkout to test that four squares can
