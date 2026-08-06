@@ -34,6 +34,7 @@ export async function GET(request) {
     const { rows } = await query(
       `select m_payment_id, buyer_name, buyer_email, buyer_phone, shirt_size,
               buyer_address, ship_overseas, details_completed_at,
+              payment_method, placed_by,
               zone_id, col, "row", span, order_amount, paid_at, block_id,
               content, id
          from squares
@@ -117,7 +118,10 @@ export async function GET(request) {
     const header = [
       "reference", "buyer_name", "email", "phone", "shirt_size",
       "handover", "address", "panel", "col", "row", "span",
-      "artwork_type", "message", "amount", "paid_at",
+      "artwork_type", "message", "amount",
+      // Cash and complimentary squares are entered from /admin rather than
+      // bought, so the books do not reconcile against Netcash without these two.
+      "payment_method", "placed_by", "paid_at",
     ];
     const lines = [header.join(",")];
     for (const r of rows) {
@@ -136,6 +140,8 @@ export async function GET(request) {
         r.content?.type || "",
         r.content?.type === "text" ? r.content.text : "",
         r.order_amount,
+        r.payment_method,
+        r.placed_by,
         r.paid_at ? new Date(r.paid_at).toISOString() : "",
       ].map(csvCell).join(","));
     }

@@ -2,6 +2,7 @@ import { query } from "../../lib/db";
 import { fmt, zoneLabel } from "../../lib/zones";
 import { RAINBOW_GRADIENT } from "../../lib/brand";
 import CancelOrderButton from "./CancelOrderButton";
+import AddPlacement from "./AddPlacement";
 
 // Most recent orders to render. Abandoned checkouts accumulate a row each, so
 // this will eventually bite; the page says so explicitly rather than quietly
@@ -36,6 +37,8 @@ function groupByBlock(rows) {
         shirtSize: r.shirt_size,
         buyerAddress: r.buyer_address,
         shipOverseas: r.ship_overseas,
+        paymentMethod: r.payment_method,
+        placedBy: r.placed_by,
         amount: Number(r.order_amount) || 0,
         status: r.status,
         createdAt: r.created_at,
@@ -225,6 +228,9 @@ export default async function AdminPage() {
                 Export artwork (.tar)
               </a>
             </div>
+            <div style={{ marginTop: 12 }}>
+              <AddPlacement />
+            </div>
             <p style={{ color: "#8b8b93", margin: "6px 0 0", fontSize: 15 }}>
               Every checkout attempt, confirmed or not - newest first.
             </p>
@@ -326,6 +332,11 @@ export default async function AdminPage() {
                   <td style={{ ...td, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>R{fmt(o.amount)}</td>
                   <td style={td}>
                     <StatusPill status={o.status} />
+                    {o.paymentMethod && o.paymentMethod !== "netcash" && (
+                      <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: ".06em", textTransform: "uppercase", marginTop: 5, color: o.paymentMethod === "cash" ? "#ffd27a" : "#c4b5fd" }}>
+                        {o.paymentMethod}{o.placedBy ? ` · ${o.placedBy}` : ""}
+                      </div>
+                    )}
                   </td>
                   <td style={{ ...td, color: "#8b8b93", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
                     {new Date(o.createdAt).toLocaleString()}

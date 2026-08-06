@@ -99,6 +99,25 @@ alter table squares add column if not exists details_completed_at timestamptz;
 -- outright, so fulfilment can filter on it instead of reading every address.
 alter table squares add column if not exists ship_overseas boolean not null default false;
 
+-- How the money arrived. Not every square is sold through Netcash: some people
+-- hand over cash at a match, and a few placements are given away. Those are
+-- entered from /admin rather than bought, so they need to be distinguishable
+-- from a card payment when the books are reconciled.
+--
+--   netcash        the default, and the only value the public checkout writes
+--   cash           paid in person. order_amount is the real price, because the
+--                  money genuinely came in, it just did not come through Netcash
+--   complimentary  given, so order_amount is 0 and it must not inflate the
+--                  raised total
+--
+-- A manual placement still gets a 20 character hex reference like any other, so
+-- /collect, the receipt and the exports all treat it identically. pf_payment_id
+-- stays null: there is no Netcash trace, and inventing one would be a lie in the
+-- one field an accountant would trust.
+alter table squares add column if not exists payment_method text not null default 'netcash'
+  check (payment_method in ('netcash', 'cash', 'complimentary'));
+alter table squares add column if not exists placed_by text;
+
 alter table squares add column if not exists content_thumb bytea;
 alter table squares add column if not exists content_meta jsonb;
 
