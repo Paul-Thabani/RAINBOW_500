@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import ShirtPanel from "./ShirtPanel";
 import { zonesFor } from "../lib/useRainbow500";
 import { BUTTON_SURFACE_ON_LIGHT, BUTTON_INK } from "../lib/brand";
+import { kitArtFor } from "../lib/kitArt";
 
 const FRONT_ZONES = zonesFor("front");
 const BACK_ZONES = zonesFor("back");
@@ -47,7 +48,7 @@ export default function ShirtZoom({ reserved, onClose }) {
   }, [zoom, panel]);
 
   const zones = panel === "front" ? FRONT_ZONES : BACK_ZONES;
-  const src = panel === "front" ? "/assets/kit-customise.png" : "/assets/kit-back.png";
+  const src = kitArtFor(panel);
 
   const tab = (active) => ({
     cursor: "pointer",

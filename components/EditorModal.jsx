@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { fmt, spotColor, pendingEntries, getZone, zonesFor, SHIRT_SIZES } from "../lib/useRainbow500";
 import { RegionOverlay } from "./ShirtPanel";
 import DoodleCanvas from "./DoodleCanvas";
+import Image from "next/image";
 import { RAINBOW_GRADIENT, BUTTON_SURFACE_ON_LIGHT, BUTTON_INK } from "../lib/brand";
+import { kitArtFor } from "../lib/kitArt";
 
 const FRONT_ZONES = zonesFor("front");
 const BACK_ZONES = zonesFor("back");
@@ -211,8 +213,11 @@ function ReviewRow({ editor, reserved, hi }) {
   const zones = panel === "back" ? BACK_ZONES : FRONT_ZONES;
   return (
     <div style={{ position: "relative" }}>
-      <img
-          src={panel === "back" ? "/assets/kit-back.png" : "/assets/kit-customise.png"}
+      {/* No `sizes`, for the same reason as ShirtPanel: ReviewKit renders this
+          row a second time at ZOOM = 3.2 inside the review lens, so it needs
+          the full-width variant to magnify. */}
+      <Image
+          src={kitArtFor(panel)}
           alt=""
           draggable={false}
           style={{ display: "block", width: "100%", height: "auto", userSelect: "none", pointerEvents: "none" }}
