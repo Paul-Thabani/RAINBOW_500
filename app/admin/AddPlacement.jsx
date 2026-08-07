@@ -1,13 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { SHIRT_SIZES } from "../../lib/zones";
 
-// Placing a square by hand, for cash taken at a match or a square being given.
+// Placing a square by hand: cash taken at a match, a card payment made somewhere
+// this app did not see, or a square being given.
 //
 // Collapsed by default. This is the one control on the dashboard that creates a
 // paid square out of nothing, so it should take a deliberate press to open
 // rather than sit open next to the order list waiting to be half-filled.
+//
+// It asks for a name and nothing else about the person. Everything a checkout
+// collects is arranged in conversation for these, so what this hands back is a
+// claim link: the artwork arrives later, through /claim, whenever they have
+// decided what they want. That also means there is one artwork path on the site
+// rather than two, and if the admin already has the logo in hand they can just
+// open the claim link themselves.
 const input = {
   width: "100%",
   boxSizing: "border-box",
@@ -29,54 +36,38 @@ const label = {
   marginBottom: 5,
 };
 
+const METHODS = [
+  { value: "cash", label: "Cash taken", note: "counts toward the total" },
+  { value: "netcash", label: "Netcash Pay Now", note: "card paid elsewhere, needs the receipt" },
+  { value: "complimentary", label: "Complimentary", note: "R0, does not count" },
+];
+
 export default function AddPlacement() {
   const [open, setOpen] = useState(false);
-  const [f, setF] = useState({
-    method: "cash",
-    name: "",
-    email: "",
-    phone: "",
-    shirtSize: "",
-    message: "",
-    placedBy: "",
-  });
-  const [image, setImage] = useState("");
-  const [imageName, setImageName] = useState("");
+  const [f, setF] = useState({ method: "cash", name: "", netcashReceipt: "", placedBy: "" });
+  const [size, setSize] = useState(1);
   const [state, setState] = useState("idle");
-  const [note, setNote] = useState("");
+  const [placed, setPlaced] = useState(null);
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
 
   const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
 
-  const valid =
-    f.name.trim().length >= 2 &&
-    /^\S+@\S+\.\S+$/.test(f.email.trim()) &&
-    f.phone.replace(/[^0-9]/g, "").length >= 7 &&
-    SHIRT_SIZES.includes(f.shirtSize) &&
-    (f.message.trim() !== "" || image !== "");
-
-  function onFile(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const rd = new FileReader();
-    rd.onload = () => {
-      setImage(String(rd.result || ""));
-      setImageName(file.name);
-    };
-    rd.readAsDataURL(file);
-  }
+  const needsReceipt = f.method === "netcash";
+  const valid = f.name.trim().length >= 2 && (!needsReceipt || f.netcashReceipt.trim() !== "");
 
   async function submit(e) {
     e.preventDefault();
     if (!valid || state === "saving") return;
     setState("saving");
     setError("");
-    setNote("");
+    setPlaced(null);
+    setCopied(false);
     try {
       const res = await fetch("/admin/placements", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...f, image }),
+        body: JSON.stringify({ ...f, size }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -84,16 +75,25 @@ export default function AddPlacement() {
         setState("idle");
         return;
       }
-      setNote(
-        `Placed at ${data.zoneId} (${data.col},${data.row}) for R${data.amount}. Reference ${data.reference}.`
-      );
-      setF({ method: f.method, name: "", email: "", phone: "", shirtSize: "", message: "", placedBy: f.placedBy });
-      setImage("");
-      setImageName("");
+      setPlaced(data);
+      setF({ method: f.method, name: "", netcashReceipt: "", placedBy: f.placedBy });
       setState("idle");
     } catch {
       setError("Couldn't reach the server");
       setState("idle");
+    }
+  }
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(placed.claimUrl);
+      setCopied(true);
+    } catch {
+      // Clipboard is blocked outside a secure context and on some in-app
+      // browsers. The link is on screen and selectable either way, so this is
+      // a convenience failing, not the feature failing.
+      setCopied(false);
+      setError("Couldn't copy automatically, select the link and copy it by hand");
     }
   }
 
@@ -114,7 +114,7 @@ export default function AddPlacement() {
           padding: "9px 16px",
         }}
       >
-        Add a cash or free placement
+        Place a square by hand
       </button>
     );
   }
@@ -142,61 +142,114 @@ export default function AddPlacement() {
         </button>
       </div>
 
-      <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))" }}>
-        <div>
-          <label style={label} htmlFor="pl-method">Payment</label>
-          <select id="pl-method" value={f.method} onChange={set("method")} style={{ ...input, appearance: "auto" }}>
-            <option value="cash">Cash taken (R2,000 counts toward the total)</option>
-            <option value="complimentary">Complimentary (R0, does not count)</option>
-          </select>
+      <div style={{ marginBottom: 16 }}>
+        <span style={label}>How many</span>
+        <div style={{ display: "flex", gap: 8 }}>
+          {[
+            { v: 1, t: "One square", p: "R2,000" },
+            { v: 4, t: "Block of 4", p: "R7,000" },
+          ].map((o) => (
+            <button
+              key={o.v}
+              type="button"
+              onClick={() => setSize(o.v)}
+              aria-pressed={size === o.v}
+              style={{
+                cursor: "pointer",
+                fontFamily: "inherit",
+                fontSize: 13.5,
+                fontWeight: 800,
+                padding: "10px 16px",
+                borderRadius: 10,
+                border: size === o.v ? "1.5px solid #a5c8ff" : "1.5px solid #24405f",
+                background: size === o.v ? "rgba(165,200,255,.12)" : "#081120",
+                color: size === o.v ? "#a5c8ff" : "#cfd0d6",
+              }}
+            >
+              {o.t}
+              <span style={{ fontWeight: 600, opacity: 0.75 }}>
+                {" "}
+                {f.method === "complimentary" ? "R0" : o.p}
+              </span>
+            </button>
+          ))}
         </div>
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <span style={label}>How it was paid</span>
+        <div style={{ display: "grid", gap: 8 }}>
+          {METHODS.map((m) => (
+            <label
+              key={m.value}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                cursor: "pointer",
+                padding: "10px 12px",
+                borderRadius: 10,
+                border: f.method === m.value ? "1.5px solid #a5c8ff" : "1.5px solid #24405f",
+                background: f.method === m.value ? "rgba(165,200,255,.10)" : "#081120",
+              }}
+            >
+              <input
+                type="radio"
+                name="pl-method"
+                value={m.value}
+                checked={f.method === m.value}
+                onChange={set("method")}
+                style={{ accentColor: "#a5c8ff", width: 17, height: 17, flex: "0 0 auto" }}
+              />
+              <span style={{ fontSize: 14, fontWeight: 800, color: "#eef1f6" }}>{m.label}</span>
+              <span style={{ fontSize: 12.5, color: "#8b8b93", fontWeight: 600 }}>{m.note}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {needsReceipt && (
+        <div style={{ marginBottom: 14 }}>
+          <label style={label} htmlFor="pl-receipt">
+            Netcash receipt or reference
+          </label>
+          <input
+            id="pl-receipt"
+            value={f.netcashReceipt}
+            onChange={set("netcashReceipt")}
+            style={{ ...input, fontFamily: "ui-monospace,monospace" }}
+            placeholder="what the Netcash statement calls it"
+          />
+          <div style={{ fontSize: 12.5, color: "#6b7280", marginTop: 6, lineHeight: 1.45 }}>
+            Required, because this is the only thing tying the square to a line on
+            the statement. It goes into the export next to the amount.
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))" }}>
         <div>
-          <label style={label} htmlFor="pl-name">Buyer name</label>
+          <label style={label} htmlFor="pl-name">
+            Name it belongs to
+          </label>
           <input id="pl-name" value={f.name} onChange={set("name")} style={input} placeholder="e.g. Thandi Mokoena" />
         </div>
         <div>
-          <label style={label} htmlFor="pl-email">Email</label>
-          <input id="pl-email" type="email" value={f.email} onChange={set("email")} style={input} placeholder="them@example.com" />
-        </div>
-        <div>
-          <label style={label} htmlFor="pl-phone">Phone</label>
-          <input id="pl-phone" type="tel" value={f.phone} onChange={set("phone")} style={input} placeholder="082 123 4567" />
-        </div>
-        <div>
-          <label style={label} htmlFor="pl-size">Shirt size</label>
-          <select id="pl-size" value={f.shirtSize} onChange={set("shirtSize")} style={{ ...input, appearance: "auto" }}>
-            <option value="">Choose a size</option>
-            {SHIRT_SIZES.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label style={label} htmlFor="pl-by">Taken by (optional)</label>
-          <input id="pl-by" value={f.placedBy} onChange={set("placedBy")} style={input} placeholder="who took the cash" />
+          <label style={label} htmlFor="pl-by">
+            Taken by (optional)
+          </label>
+          <input id="pl-by" value={f.placedBy} onChange={set("placedBy")} style={input} placeholder="who took the money" />
         </div>
       </div>
 
-      <div style={{ marginTop: 14 }}>
-        <label style={label} htmlFor="pl-msg">Message on the square</label>
-        <input id="pl-msg" value={f.message} onChange={set("message")} style={input} placeholder="short text, or upload a logo instead" />
-      </div>
-
-      <div style={{ marginTop: 12 }}>
-        <label style={label} htmlFor="pl-img">Or a logo</label>
-        <input id="pl-img" type="file" accept="image/*" onChange={onFile} style={{ ...input, padding: 8 }} />
-        {imageName && (
-          <div style={{ fontSize: 12, color: "#8bf0b0", marginTop: 6 }}>
-            {imageName} attached, and it will be used instead of the message
-          </div>
-        )}
-      </div>
-
-      {/* No cell picker. Whoever is doing this is usually standing at a match
-          with someone's cash in hand, and the next free square is fine. */}
+      {/* No cell picker, and no artwork upload. Whoever is doing this is usually
+          standing at a match with someone's cash in hand: the next free square
+          is fine, and the artwork comes later through the claim link. */}
       <div style={{ fontSize: 12.5, color: "#6b7280", marginTop: 14, lineHeight: 1.45 }}>
-        The next free square is used automatically. It goes straight to paid, and
-        it cannot take a square somebody has already bought or is mid-checkout on.
+        The next free {size === 4 ? "block of four" : "square"} is used
+        automatically. It goes straight to paid and cannot take anything somebody
+        has already bought or is mid-checkout on. You get a code to pass on, and
+        they add their own artwork with it.
       </div>
 
       {error && (
@@ -204,9 +257,68 @@ export default function AddPlacement() {
           {error}
         </div>
       )}
-      {note && (
-        <div role="status" style={{ marginTop: 12, color: "#8bf0b0", fontSize: 13.5, fontWeight: 700 }}>
-          {note} Refresh to see it in the list.
+
+      {placed && (
+        <div
+          role="status"
+          style={{
+            marginTop: 14,
+            padding: 16,
+            borderRadius: 12,
+            border: "1px solid #2f6b46",
+            background: "rgba(139,240,176,.06)",
+          }}
+        >
+          <div style={{ fontSize: 14, fontWeight: 800, color: "#8bf0b0", marginBottom: 10 }}>
+            Placed at {placed.zoneId} {placed.cells.map((c) => `(${c.col},${c.row})`).join(" ")} for R
+            {placed.amount}
+          </div>
+          <div style={label}>Code to give them</div>
+          <div
+            style={{
+              fontFamily: "ui-monospace,monospace",
+              fontSize: 22,
+              fontWeight: 800,
+              letterSpacing: ".06em",
+              color: "#eef1f6",
+              marginBottom: 12,
+            }}
+          >
+            {placed.claimToken}
+          </div>
+          <div style={label}>Or send this link</div>
+          <div
+            style={{
+              fontFamily: "ui-monospace,monospace",
+              fontSize: 12.5,
+              color: "#a5c8ff",
+              wordBreak: "break-all",
+              marginBottom: 12,
+            }}
+          >
+            {placed.claimUrl}
+          </div>
+          <button
+            type="button"
+            onClick={copyLink}
+            style={{
+              cursor: "pointer",
+              fontFamily: "inherit",
+              fontSize: 13,
+              fontWeight: 800,
+              color: "#0a0a0c",
+              background: "#8bf0b0",
+              border: "none",
+              borderRadius: 999,
+              padding: "9px 18px",
+            }}
+          >
+            {copied ? "Copied" : "Copy link"}
+          </button>
+          <div style={{ fontSize: 12.5, color: "#6b7280", marginTop: 12, lineHeight: 1.45 }}>
+            Reference {placed.reference}. Write the code down before you close
+            this: it is shown here and in the order, and nothing is emailed.
+          </div>
         </div>
       )}
 
@@ -216,7 +328,11 @@ export default function AddPlacement() {
         onClick={(e) => {
           if (valid) return;
           e.preventDefault();
-          setError("Fill in name, email, phone, size, and either a message or a logo.");
+          setError(
+            needsReceipt && f.netcashReceipt.trim() === ""
+              ? "Enter the Netcash receipt for this payment."
+              : "Enter the name this square belongs to."
+          );
         }}
         style={{
           marginTop: 16,
@@ -232,7 +348,11 @@ export default function AddPlacement() {
           opacity: valid || state === "saving" ? 1 : 0.5,
         }}
       >
-        {state === "saving" ? "Placing..." : f.method === "cash" ? "Place it, cash taken" : "Place it, free"}
+        {state === "saving"
+          ? "Placing..."
+          : f.method === "complimentary"
+            ? `Place ${size === 4 ? "four" : "it"}, free`
+            : `Place ${size === 4 ? "four" : "it"}, money received`}
       </button>
     </form>
   );

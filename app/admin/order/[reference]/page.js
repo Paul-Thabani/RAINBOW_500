@@ -92,10 +92,34 @@ export default async function OrderDetail({ params }) {
             <div style={{ display: "grid", gap: 14 }}>
               <Field k="Reference" v={o.m_payment_id} mono />
               <Field k="Netcash trace" v={o.pf_payment_id} mono />
+              {/* Only ever set on a hand placement, where it is the receipt an
+                  admin typed in for a card payment this app never saw. Kept
+                  separate from the trace above so the verified and the
+                  hand-entered are never mistaken for each other. */}
+              {o.netcash_receipt && <Field k="Netcash receipt (entered by hand)" v={o.netcash_receipt} mono />}
               <Field k="Started" v={when(o.created_at)} />
               <Field k="Paid" v={when(o.paid_at)} />
             </div>
           </div>
+
+          {/* Shown so a lost code can be found. There is no other copy: nothing
+              is emailed for a hand placement, by design, because the whole point
+              is that the conversation happens off-system. */}
+          {o.claim_token && (
+            <div style={{ ...card, borderColor: o.claim_completed_at ? "#2f6b46" : "#7a5c1f" }}>
+              <div style={{ display: "grid", gap: 14 }}>
+                <Field k="Claim code" v={o.claim_token} mono />
+                <Field
+                  k="Artwork added"
+                  v={
+                    o.claim_completed_at
+                      ? when(o.claim_completed_at)
+                      : "not yet, they still have to use the code"
+                  }
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <h2 style={{ fontSize: 18, fontWeight: 800, margin: "26px 0 12px" }}>

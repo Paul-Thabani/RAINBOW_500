@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { query } from "../../../lib/db";
-import { artMeta, makeThumb } from "../../../lib/artwork.mjs";
 import { generateReference } from "../../../lib/netcash";
+import { generateClaimToken, claimUrl } from "../../../lib/claimToken";
 import {
   getZone,
   validFoot,
@@ -9,15 +9,24 @@ import {
   countedZones,
   availableSpots,
   occSetFrom,
-  SHIRT_SIZES,
+  spotColor,
   PRICE_PER_SPOT,
+  BLOCK_PRICE,
 } from "../../../lib/zones";
 
-// Place a square from /admin, for somebody who paid cash or is being given one.
+// Place a square, or a block of four, from /admin.
 //
-// Goes straight to `paid`, because the money has already changed hands (or was
-// never going to). There is no Netcash round trip to wait for, so there is no
-// pending state to be in.
+// For the sales that do not go through the public checkout: cash taken at a
+// match, a card payment made somewhere this app did not see, or a square given
+// away. The money is already settled by the time anyone opens this form, so the
+// squares go straight to `paid`. There is no Netcash round trip to wait for and
+// therefore no pending state to be in.
+//
+// It records a name and nothing else about the person. Everything a checkout
+// collects (email, phone, shirt size, artwork) is arranged in conversation for
+// these, and typing a placeholder into four fields to satisfy a validator would
+// store four lies. What it hands back instead is a claim token: the artwork
+// arrives later, through /claim, whenever the person has decided what they want.
 //
 // It writes through the same table, the same unique index and the same
 // availability check as a real checkout, so a placement cannot double-sell a
@@ -28,7 +37,7 @@ import {
 // Under /admin, so middleware's Basic Auth covers it.
 export const dynamic = "force-dynamic";
 
-const MAX_CONTENT_LENGTH = 2_000_000;
+const METHODS = ["cash", "complimentary", "netcash"];
 
 export async function POST(request) {
   let body;
@@ -38,35 +47,31 @@ export async function POST(request) {
     return Response.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const method = body?.method === "complimentary" ? "complimentary" : "cash";
+  const method = METHODS.includes(body?.method) ? body.method : null;
   const name = typeof body?.name === "string" ? body.name.trim() : "";
-  const email = typeof body?.email === "string" ? body.email.trim() : "";
-  const phone = typeof body?.phone === "string" ? body.phone.trim() : "";
-  const size = typeof body?.shirtSize === "string" ? body.shirtSize.trim().toUpperCase() : "";
   const placedBy = typeof body?.placedBy === "string" ? body.placedBy.trim().slice(0, 80) : "";
-  const message = typeof body?.message === "string" ? body.message.trim() : "";
-  const image = typeof body?.image === "string" ? body.image : "";
+  const receipt = typeof body?.netcashReceipt === "string" ? body.netcashReceipt.trim().slice(0, 120) : "";
+  const size = body?.size === 4 ? 4 : 1;
 
-  if (name.length < 2) return Response.json({ error: "Enter the buyer's name" }, { status: 400 });
-  if (!/^\S+@\S+\.\S+$/.test(email)) {
-    return Response.json({ error: "Enter a valid email address" }, { status: 400 });
+  if (!method) {
+    return Response.json({ error: "Choose how this was paid for" }, { status: 400 });
   }
-  if (phone.replace(/[^0-9]/g, "").length < 7) {
-    return Response.json({ error: "Enter a valid phone number" }, { status: 400 });
+  if (name.length < 2) {
+    return Response.json({ error: "Enter the name this square belongs to" }, { status: 400 });
   }
-  if (!SHIRT_SIZES.includes(size)) {
-    return Response.json({ error: "Choose a shirt size" }, { status: 400 });
-  }
-  if (!message && !image) {
-    return Response.json({ error: "Add a message or upload a logo for the square" }, { status: 400 });
-  }
-  if (image && image.length > MAX_CONTENT_LENGTH) {
-    return Response.json({ error: "That image is too large" }, { status: 400 });
+  // The whole point of the netcash option is that it ties back to a statement
+  // line. Without the receipt it is indistinguishable from cash, and recording
+  // it as a card payment we cannot find would be worse than recording nothing.
+  if (method === "netcash" && !receipt) {
+    return Response.json(
+      { error: "Enter the Netcash Pay Now receipt or reference for this payment" },
+      { status: 400 }
+    );
   }
 
-  // Cash means the money arrived, so it belongs in the raised total at the real
-  // price. Complimentary was given, so it must not inflate it.
-  const amount = method === "cash" ? PRICE_PER_SPOT : 0;
+  // Cash and netcash both mean the money arrived, so both belong in the raised
+  // total at the real price. Complimentary was given, so it must not inflate it.
+  const amount = method === "complimentary" ? 0 : size === 4 ? BLOCK_PRICE : PRICE_PER_SPOT;
 
   try {
     // Same sweep the checkout route runs, so a placement is not blocked by a
@@ -85,18 +90,21 @@ export async function POST(request) {
     });
     const occ = occSetFrom(reserved);
 
-    // Either the cell they asked for, or the next free one. "Anywhere" is the
-    // common case at a match: somebody hands over cash and does not care which
-    // square, and hunting for a free cell in a list of 500 is not a thing to do
-    // on a phone at a touchline.
+    // Either the cell they asked for, or the next free one that fits. "Anywhere"
+    // is the common case: somebody hands over cash and does not care which
+    // square, and hunting through 500 cells on a phone at a touchline is not a
+    // thing to ask of a volunteer.
     let zoneId = typeof body?.zoneId === "string" ? body.zoneId : "";
     let col = Number.isInteger(body?.col) ? body.col : null;
     let row = Number.isInteger(body?.row) ? body.row : null;
 
     if (!zoneId || col === null || row === null) {
-      const free = availableSpots(occ, 1);
+      const free = availableSpots(occ, size);
       if (!free.length) {
-        return Response.json({ error: "Every square is taken" }, { status: 409 });
+        return Response.json(
+          { error: size === 4 ? "No free block of four left" : "Every square is taken" },
+          { status: 409 }
+        );
       }
       ({ zoneId, col, row } = free[0]);
     }
@@ -105,55 +113,100 @@ export async function POST(request) {
     if (!zone || !countedZones().some((z) => z.id === zoneId)) {
       return Response.json({ error: "That is not a claimable panel" }, { status: 400 });
     }
-    if (!validFoot(occ, zone, col, row, 1)) {
-      return Response.json({ error: "That square is already taken, try another" }, { status: 409 });
+    // validFoot already understands the 2x2 footprint, so this covers a block
+    // partially overlapping something sold.
+    if (!validFoot(occ, zone, col, row, size)) {
+      return Response.json(
+        {
+          error:
+            size === 4
+              ? "That block overlaps a square that is already taken, try another"
+              : "That square is already taken, try another",
+        },
+        { status: 409 }
+      );
     }
-
-    const content = image
-      ? { type: "image", src: image, logo: true }
-      : { type: "text", text: message };
 
     const reference = generateReference();
     const blockId = crypto.randomUUID();
-    const thumb = await makeThumb(content);
-    const meta = artMeta(content);
+    const claimToken = generateClaimToken();
 
-    await query(
-      `insert into squares
-         (block_id, m_payment_id, zone_id, col, "row", span, big,
-          content, content_thumb, content_meta, fill, order_amount,
-          buyer_name, buyer_email, buyer_phone, shirt_size,
-          status, payment_method, placed_by, paid_at)
-       values ($1,$2,$3,$4,$5,1,false,$6,$7,$8,$9,$10,$11,$12,$13,$14,'paid',$15,$16,now())`,
-      [
+    // A block of four is four rows at span 1, one per cell, exactly as the
+    // public checkout stores it. Not one row at span 2: that is the `big`
+    // product, it carries a single artwork across the whole 2x2, and it is the
+    // shape with the known atomicity gap. Four rows also means four independent
+    // artworks, which is what somebody buying four squares expects.
+    const offsets = size === 4 ? [[0, 0], [1, 0], [0, 1], [1, 1]] : [[0, 0]];
+    const cells = offsets.map(([dc, dr]) => ({
+      col: col + dc,
+      row: row + dr,
+      fill: spotColor(zone, col + dc, row + dr),
+    }));
+
+    // span, big, status and paid_at are the same literal for every row, so they
+    // are written into the SQL rather than bound four times over.
+    const values = [];
+    const tuples = cells.map((c) => {
+      const [b, ref, z, cc, rr, fill, amt, nm, mth, by, rcpt, tok] = [
         blockId,
         reference,
         zoneId,
-        col,
-        row,
-        content,
-        thumb,
-        meta,
-        "hsl(200 72% 50%)",
+        c.col,
+        c.row,
+        c.fill,
         amount,
         name,
-        email,
-        phone,
-        size,
         method,
         placedBy || null,
-      ]
+        receipt || null,
+        claimToken,
+      ].map((v) => {
+        values.push(v);
+        return `$${values.length}`;
+      });
+      return `(${b}, ${ref}, ${z}, ${cc}, ${rr}, 1, false, ${fill}, ${amt}, ${nm}, 'paid', ${mth}, ${by}, ${rcpt}, ${tok}, now())`;
+    });
+
+    // One statement, so a block of four is all-or-nothing: if any cell is taken
+    // the whole placement fails rather than leaving a half-claimed block.
+    //
+    // No content, content_thumb or content_meta. The square is paid for and
+    // holds its cell, and it renders as a plain claimed block until the artwork
+    // comes in through /claim. `claimed_squares` already gates artwork on
+    // content_thumb being present, so nothing downstream needs to change.
+    await query(
+      `insert into squares
+         (block_id, m_payment_id, zone_id, col, "row", span, big,
+          fill, order_amount, buyer_name, status, payment_method, placed_by,
+          netcash_receipt, claim_token, paid_at)
+       values ${tuples.join(", ")}`,
+      values
     );
 
     console.log(
-      `/admin/placements: ${method} square for ${name} at ${zoneId} (${col},${row}), ref ${reference}, R${amount}`
+      `/admin/placements: ${method} ${size === 4 ? "block of 4" : "square"} for ${name} at ` +
+        `${zoneId} (${col},${row}), ref ${reference}, token ${claimToken}, R${amount}` +
+        (receipt ? `, netcash receipt ${receipt}` : "")
     );
-    return Response.json({ ok: true, reference, zoneId, col, row, amount, method });
+
+    return Response.json({
+      ok: true,
+      reference,
+      claimToken,
+      claimUrl: claimUrl(claimToken),
+      zoneId,
+      col,
+      row,
+      size,
+      cells: cells.map((c) => ({ col: c.col, row: c.row })),
+      amount,
+      method,
+    });
   } catch (e) {
-    // 23505 means the unique index refused it: somebody claimed that exact cell
-    // between the check and the insert.
+    // 23505 means the unique index refused it: somebody claimed one of these
+    // exact cells between the check and the insert.
     if (e.code === "23505") {
-      return Response.json({ error: "That square was taken a moment ago, try again" }, { status: 409 });
+      return Response.json({ error: "That was taken a moment ago, try again" }, { status: 409 });
     }
     console.error("/admin/placements:", e.message);
     return Response.json({ error: "Couldn't place that: " + e.message }, { status: 500 });

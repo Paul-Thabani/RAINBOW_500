@@ -34,7 +34,7 @@ export async function GET(request) {
     const { rows } = await query(
       `select m_payment_id, buyer_name, buyer_email, buyer_phone, shirt_size,
               buyer_address, ship_overseas, details_completed_at,
-              payment_method, placed_by,
+              payment_method, placed_by, netcash_receipt, claim_token,
               zone_id, col, "row", span, order_amount, paid_at, block_id,
               content, id
          from squares
@@ -144,8 +144,13 @@ export async function GET(request) {
       "handover", "address", "panel", "col", "row", "span",
       "artwork_type", "message", "order_total", "squares_in_order",
       // Cash and complimentary squares are entered from /admin rather than
-      // bought, so the books do not reconcile against Netcash without these two.
-      "payment_method", "placed_by", "paid_at",
+      // bought, so the books do not reconcile against Netcash without these.
+      // netcash_receipt is the statement line for a card payment this app never
+      // saw, and is the only thing tying such a square to the money.
+      "payment_method", "placed_by", "netcash_receipt",
+      // Blank artwork_type on a hand placement means nobody has used their claim
+      // code yet. The code is here so it can be looked up when somebody loses it.
+      "claim_code", "paid_at",
     ];
     const lines = [header.join(",")];
     for (const r of rows) {
@@ -169,6 +174,8 @@ export async function GET(request) {
         cellsPerOrder.get(r.block_id),
         r.payment_method,
         r.placed_by,
+        r.netcash_receipt,
+        r.claim_token,
         r.paid_at ? new Date(r.paid_at).toISOString() : "",
       ].map(csvCell).join(","));
     }
