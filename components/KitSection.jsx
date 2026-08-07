@@ -6,6 +6,7 @@ import ShirtPanel from "./ShirtPanel";
 import ShirtZoom from "./ShirtZoom";
 import DesignNote from "./DesignNote";
 import { RAINBOW_GRADIENT, BUTTON_SURFACE, BUTTON_INK } from "../lib/brand";
+import { kitArtFor } from "../lib/kitArt";
 
 const FRONT_ZONES = zonesFor("front");
 const BACK_ZONES = zonesFor("back");
@@ -181,7 +182,7 @@ export default function KitSection({
       <div style={{ position: "relative", maxWidth: 700, margin: "0 auto" }}>
         <ShirtPanel
           zones={main === "front" ? FRONT_ZONES : BACK_ZONES}
-          src={main === "front" ? "/assets/kit-customise.png" : "/assets/kit-back.png"}
+          src={kitArtFor(main)}
           label={main === "front" ? "Front of the shirt" : "Back of the shirt"}
           reserved={reserved}
           interactive
@@ -203,7 +204,7 @@ export default function KitSection({
         >
           <ShirtPanel
             zones={other === "front" ? FRONT_ZONES : BACK_ZONES}
-            src={other === "front" ? "/assets/kit-customise.png" : "/assets/kit-back.png"}
+            src={kitArtFor(other)}
             reserved={reserved}
             interactive={false}
           />

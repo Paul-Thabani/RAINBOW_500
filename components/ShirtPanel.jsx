@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { inExclude } from "../lib/useRainbow500";
 
 function occupiedSet(entries) {
@@ -231,9 +232,19 @@ export default function ShirtPanel({
   return (
     <div style={{ flex: 1, minWidth: 0 }}>
       <div style={{ position: "relative", width: "100%", borderRadius: 14, overflow: "hidden", background: "#10203a", border: "1px solid #24405f" }}>
-        <img
+        {/* No `sizes`, deliberately. Without it next/image builds the srcset
+            from the intrinsic width, so the browser fetches the full 943px
+            variant on any DPR >= 1. That matters because this same panel is
+            re-rendered scaled up inside two magnifiers: ShirtZoom at 2x and
+            the EditorModal review lens at 3.2x. A responsive `sizes` would let
+            a phone pick the 640px variant and both would come out blurrier
+            than they are today.
+
+            The saving here is the format, not the pixels: the same image as
+            WebP is about 50 KB against 542 KB as PNG. */}
+        <Image
           src={src}
-          alt={label}
+          alt={label || ""}
           draggable={false}
           style={{ display: "block", width: "100%", height: "auto", userSelect: "none", pointerEvents: "none" }}
         />
