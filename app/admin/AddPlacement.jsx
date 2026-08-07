@@ -50,34 +50,73 @@ export default function AddPlacement() {
   const [placed, setPlaced] = useState(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
+  // Recent Netcash payments, read from the relay. Loaded on demand rather than
+  // with the dashboard, because most placements are cash and nobody should pay
+  // for a cross-service call they did not ask for.
+  const [txns, setTxns] = useState(null);
+  const [txnState, setTxnState] = useState("idle");
+  const [warnings, setWarnings] = useState([]);
 
   const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
 
   const needsReceipt = f.method === "netcash";
   const valid = f.name.trim().length >= 2 && (!needsReceipt || f.netcashReceipt.trim() !== "");
 
-  async function submit(e) {
-    e.preventDefault();
+  async function loadTxns() {
+    setTxnState("loading");
+    setError("");
+    try {
+      const res = await fetch("/admin/netcash-transactions", { cache: "no-store" });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Couldn't load recent payments");
+        setTxnState("idle");
+        return;
+      }
+      setTxns(data.transactions || []);
+      setTxnState("idle");
+    } catch {
+      setError("Couldn't reach the payment relay");
+      setTxnState("idle");
+    }
+  }
+
+  async function submit(e, confirmWarnings = false) {
+    if (e) e.preventDefault();
     if (!valid || state === "saving") return;
     setState("saving");
     setError("");
+    if (!confirmWarnings) setWarnings([]);
     setPlaced(null);
     setCopied(false);
     try {
       const res = await fetch("/admin/placements", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...f, size }),
+        body: JSON.stringify({ ...f, size, confirmWarnings }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Couldn't place that");
+        // The server checks the payment against the relay and can come back
+        // asking for a deliberate confirmation. Surfaced as its own block with
+        // its own button rather than as an error, because the operator may well
+        // know something the check cannot.
+        if (data.needsConfirm && Array.isArray(data.warnings)) {
+          setWarnings(data.warnings);
+          setError("");
+        } else {
+          setError(data.error || "Couldn't place that");
+          setWarnings([]);
+        }
         setState("idle");
         return;
       }
       setPlaced(data);
+      setWarnings([]);
       setF({ method: f.method, name: "", netcashReceipt: "", placedBy: f.placedBy });
       setState("idle");
+      // The list is now stale: the payment just used is no longer selectable.
+      if (txns) loadTxns();
     } catch {
       setError("Couldn't reach the server");
       setState("idle");
@@ -218,12 +257,108 @@ export default function AddPlacement() {
             value={f.netcashReceipt}
             onChange={set("netcashReceipt")}
             style={{ ...input, fontFamily: "ui-monospace,monospace" }}
-            placeholder="what the Netcash statement calls it"
+            placeholder="pick one below, or type it"
           />
           <div style={{ fontSize: 12.5, color: "#6b7280", marginTop: 6, lineHeight: 1.45 }}>
             Required, because this is the only thing tying the square to a line on
-            the statement. It goes into the export next to the amount.
+            the statement. Whatever you enter is checked against what Netcash
+            actually sent before the square is created.
           </div>
+
+          {txns === null ? (
+            <button
+              type="button"
+              onClick={loadTxns}
+              style={{
+                marginTop: 12,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                fontSize: 13,
+                fontWeight: 700,
+                color: "#cfd0d6",
+                background: "transparent",
+                border: "1.5px solid #24405f",
+                borderRadius: 999,
+                padding: "8px 15px",
+              }}
+            >
+              {txnState === "loading" ? "Loading..." : "Show recent Netcash payments"}
+            </button>
+          ) : (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+                <span style={label}>Recent payments</span>
+                <button
+                  type="button"
+                  onClick={loadTxns}
+                  style={{ cursor: "pointer", background: "transparent", border: "none", color: "#8b8b93", fontSize: 12, fontWeight: 700 }}
+                >
+                  {txnState === "loading" ? "..." : "Refresh"}
+                </button>
+              </div>
+              {txns.length === 0 && (
+                <div style={{ fontSize: 13, color: "#6b7280" }}>Nothing recorded.</div>
+              )}
+              <div style={{ display: "grid", gap: 6, maxHeight: 280, overflowY: "auto" }}>
+                {txns.map((t) => {
+                  const chosen = f.netcashReceipt.trim() === t.reference;
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setF((p) => ({ ...p, netcashReceipt: t.reference }))}
+                      disabled={!t.selectable}
+                      title={t.takenBy ? `Already on a square for ${t.takenBy.name || "another order"}` : ""}
+                      style={{
+                        textAlign: "left",
+                        cursor: t.selectable ? "pointer" : "not-allowed",
+                        fontFamily: "inherit",
+                        padding: "9px 11px",
+                        borderRadius: 9,
+                        border: chosen ? "1.5px solid #a5c8ff" : "1.5px solid #24405f",
+                        background: chosen ? "rgba(165,200,255,.12)" : "#081120",
+                        opacity: t.selectable ? 1 : 0.45,
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 8,
+                        alignItems: "baseline",
+                      }}
+                    >
+                      <span style={{ fontSize: 14, fontWeight: 800, color: "#eef1f6" }}>R{t.amount}</span>
+                      <span style={{ fontSize: 12, color: "#8b8b93", fontWeight: 600 }}>
+                        {new Date(t.receivedAt).toLocaleString("en-GB")}
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: "ui-monospace,monospace",
+                          fontSize: 11.5,
+                          color: "#6b7280",
+                          wordBreak: "break-all",
+                        }}
+                      >
+                        {t.reference}
+                      </span>
+                      {/* The one thing an operator must not get wrong. A foreign
+                          reference is very likely the other app on the shared
+                          Netcash profile, and tying that here would count the
+                          same money twice across two businesses. */}
+                      {t.shape === "foreign" && (
+                        <span style={{ fontSize: 11, fontWeight: 800, color: "#ffd27a" }}>NOT THIS APP</span>
+                      )}
+                      {!t.accepted && (
+                        <span style={{ fontSize: 11, fontWeight: 800, color: "#fca5a5" }}>DECLINED</span>
+                      )}
+                      {t.takenBy && (
+                        <span style={{ fontSize: 11, fontWeight: 800, color: "#8b8b93" }}>
+                          ALREADY USED
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -255,6 +390,67 @@ export default function AddPlacement() {
       {error && (
         <div role="alert" style={{ marginTop: 12, color: "#fca5a5", fontSize: 13.5, fontWeight: 700 }}>
           {error}
+        </div>
+      )}
+
+      {/* Refused once, and offered again behind a deliberate second press. The
+          checks cannot know everything: a payment the relay never saw is normal
+          for a different Netcash service, and only a human can say whether a
+          reference from the shared profile was for a square. What must not
+          happen is somebody tying money without being told. */}
+      {warnings.length > 0 && (
+        <div
+          role="alert"
+          style={{
+            marginTop: 14,
+            padding: 16,
+            borderRadius: 12,
+            border: "1px solid #7a5c1f",
+            background: "rgba(255,210,122,.07)",
+          }}
+        >
+          <div style={{ fontSize: 14, fontWeight: 800, color: "#ffd27a", marginBottom: 10 }}>
+            Check this before you go ahead
+          </div>
+          <ul style={{ margin: "0 0 14px", paddingLeft: 20, color: "#e8dcc0", fontSize: 13.5, lineHeight: 1.55 }}>
+            {warnings.map((w, i) => (
+              <li key={i} style={{ marginBottom: 6 }}>
+                {w}
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            onClick={() => submit(null, true)}
+            style={{
+              cursor: "pointer",
+              fontFamily: "inherit",
+              fontSize: 13,
+              fontWeight: 800,
+              color: "#0a0a0c",
+              background: "#ffd27a",
+              border: "none",
+              borderRadius: 999,
+              padding: "9px 18px",
+            }}
+          >
+            {state === "saving" ? "Placing..." : "I have checked, place it anyway"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setWarnings([])}
+            style={{
+              marginLeft: 10,
+              cursor: "pointer",
+              background: "transparent",
+              border: "none",
+              color: "#8b8b93",
+              fontSize: 13,
+              fontWeight: 700,
+            }}
+          >
+            Cancel
+          </button>
         </div>
       )}
 
