@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { query } from "../../../lib/db";
-import { generateReference } from "../../../lib/netcash";
+import { generateReference, isOurReference } from "../../../lib/netcash";
 import { generateClaimToken, claimUrl } from "../../../lib/claimToken";
 import {
   getZone,
@@ -39,6 +39,42 @@ export const dynamic = "force-dynamic";
 
 const METHODS = ["cash", "complimentary", "netcash"];
 
+const RELAY_BASE = process.env.RELAY_BASE_URL || "http://127.0.0.1:8274";
+const RELAY_TOKEN = process.env.RELAY_READ_TOKEN || "";
+
+// Look a Netcash reference up in the relay's record of what Netcash actually
+// sent.
+//
+// The client sends only the reference. Everything else about the payment, the
+// amount and the RequestTrace, is read here rather than accepted from the
+// browser, so an operator cannot tie a square to an amount that was never paid
+// or to a trace they made up.
+//
+// Returns null when the relay has no such transaction, which is a legitimate
+// outcome rather than an error: a payment taken through a different Netcash
+// service never passed through here. The caller decides what to do about it.
+async function lookupPayment(reference) {
+  if (!RELAY_TOKEN) return null;
+  try {
+    const ac = new AbortController();
+    const timeout = setTimeout(() => ac.abort(), 8000);
+    const res = await fetch(`${RELAY_BASE}/transactions?days=400&limit=500`, {
+      headers: { Authorization: `Bearer ${RELAY_TOKEN}` },
+      cache: "no-store",
+      signal: ac.signal,
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+    const { transactions } = await res.json();
+    return (transactions || []).find((t) => t.reference === reference) || null;
+  } catch (e) {
+    // A relay that cannot be reached must not block a placement. The square
+    // still records the reference, just without the verified trace.
+    console.error("/admin/placements: relay lookup failed -", e.message);
+    return null;
+  }
+}
+
 export async function POST(request) {
   let body;
   try {
@@ -68,12 +104,91 @@ export async function POST(request) {
       { status: 400 }
     );
   }
+  // The operator has seen and accepted a warning about this payment: either the
+  // amount does not match, or the reference is not one this app minted so only a
+  // human can say the money was for a square rather than for the other app on
+  // the shared Netcash profile.
+  const confirmed = body?.confirmWarnings === true;
 
   // Cash and netcash both mean the money arrived, so both belong in the raised
   // total at the real price. Complimentary was given, so it must not inflate it.
   const amount = method === "complimentary" ? 0 : size === 4 ? BLOCK_PRICE : PRICE_PER_SPOT;
 
   try {
+    // One payment, one square. A Netcash reference already recorded here has
+    // already been counted toward the raised total, so tying it again would
+    // invent money the club never received, which is the single worst thing this
+    // route could do. Checked in the database rather than in the picker's own
+    // list, because two operators could be on the form at the same time.
+    if (method === "netcash" && receipt) {
+      const { rows: clash } = await query(
+        `select buyer_name, m_payment_id, status
+           from squares
+          where netcash_receipt = $1 or m_payment_id = $1
+          limit 1`,
+        [receipt]
+      );
+      if (clash.length) {
+        const c = clash[0];
+        return Response.json(
+          {
+            // Never overridable. Everything else here can be confirmed past,
+            // because a human may know something this code does not. This one
+            // cannot: the same payment on two squares is double-counted money
+            // whatever the operator believes.
+            error:
+              `That Netcash payment is already on a square for ${c.buyer_name || "another order"}` +
+              ` (${c.m_payment_id}, ${c.status}). One payment cannot pay for two squares.`,
+          },
+          { status: 409 }
+        );
+      }
+    }
+
+    // Everything else about the payment comes from the relay's record of what
+    // Netcash actually sent, never from the browser.
+    let verifiedTrace = null;
+    if (method === "netcash" && receipt) {
+      const payment = await lookupPayment(receipt);
+      const warnings = [];
+
+      if (!payment) {
+        // Legitimate: a payment taken through a different Netcash service never
+        // passed through the relay. Worth saying out loud, because the usual
+        // cause is a mistyped reference, and an unverifiable tie is exactly the
+        // thing this feature was built to stop.
+        warnings.push(
+          "The payment relay has no record of that reference, so it cannot be checked. " +
+            "That is expected only if the payment was taken through a different Netcash service."
+        );
+      } else {
+        if (!payment.accepted) {
+          warnings.push(
+            `Netcash did not accept that payment (${payment.reason || "no reason given"}), so no money moved.`
+          );
+        }
+        const paid = Number(payment.amount);
+        if (Number.isFinite(paid) && Math.abs(paid - amount) >= 0.01) {
+          warnings.push(
+            `That payment was R${paid.toFixed(2)} but this placement is R${amount.toFixed(2)}.`
+          );
+        }
+        if (!isOurReference(receipt)) {
+          warnings.push(
+            "That reference was not created by this app, so it may belong to the other " +
+              "app on the shared Netcash profile. Only tie it here if you know the money was for a square."
+          );
+        }
+        // A real RequestTrace, read from what Netcash sent rather than typed, so
+        // pf_payment_id keeps its meaning: proof the money moved.
+        verifiedTrace = payment.requestTrace || null;
+      }
+
+      if (warnings.length && !confirmed) {
+        return Response.json({ error: warnings.join(" "), warnings, needsConfirm: true }, { status: 409 });
+      }
+    }
+
     // Same sweep the checkout route runs, so a placement is not blocked by a
     // dead hold from twenty minutes ago.
     await query(
@@ -147,7 +262,7 @@ export async function POST(request) {
     // are written into the SQL rather than bound four times over.
     const values = [];
     const tuples = cells.map((c) => {
-      const [b, ref, z, cc, rr, fill, amt, nm, mth, by, rcpt, tok] = [
+      const [b, ref, z, cc, rr, fill, amt, nm, mth, by, rcpt, tok, trace] = [
         blockId,
         reference,
         zoneId,
@@ -160,11 +275,16 @@ export async function POST(request) {
         placedBy || null,
         receipt || null,
         claimToken,
+        // Only ever a trace the relay confirmed Netcash sent, never a typed
+        // value, so this column keeps meaning "proof the money moved". Null for
+        // cash, for complimentary, and for a reference the relay has no record
+        // of.
+        verifiedTrace,
       ].map((v) => {
         values.push(v);
         return `$${values.length}`;
       });
-      return `(${b}, ${ref}, ${z}, ${cc}, ${rr}, 1, false, ${fill}, ${amt}, ${nm}, 'paid', ${mth}, ${by}, ${rcpt}, ${tok}, now())`;
+      return `(${b}, ${ref}, ${z}, ${cc}, ${rr}, 1, false, ${fill}, ${amt}, ${nm}, 'paid', ${mth}, ${by}, ${rcpt}, ${tok}, ${trace}, now())`;
     });
 
     // One statement, so a block of four is all-or-nothing: if any cell is taken
@@ -178,7 +298,7 @@ export async function POST(request) {
       `insert into squares
          (block_id, m_payment_id, zone_id, col, "row", span, big,
           fill, order_amount, buyer_name, status, payment_method, placed_by,
-          netcash_receipt, claim_token, paid_at)
+          netcash_receipt, claim_token, pf_payment_id, paid_at)
        values ${tuples.join(", ")}`,
       values
     );
