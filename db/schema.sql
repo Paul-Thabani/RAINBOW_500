@@ -104,19 +104,65 @@ alter table squares add column if not exists ship_overseas boolean not null defa
 -- entered from /admin rather than bought, so they need to be distinguishable
 -- from a card payment when the books are reconciled.
 --
---   netcash        the default, and the only value the public checkout writes
+--   netcash        a Pay Now card payment. Written by the public checkout, and
+--                  also by a hand placement for money that went through Netcash
+--                  somewhere this app did not see, in which case netcash_receipt
+--                  below carries the receipt it has to reconcile against
 --   cash           paid in person. order_amount is the real price, because the
 --                  money genuinely came in, it just did not come through Netcash
 --   complimentary  given, so order_amount is 0 and it must not inflate the
 --                  raised total
 --
+-- Both cash and netcash count toward the raised total, because in both cases the
+-- money arrived. Only complimentary is excluded.
+--
 -- A manual placement still gets a 20 character hex reference like any other, so
 -- /collect, the receipt and the exports all treat it identically. pf_payment_id
--- stays null: there is no Netcash trace, and inventing one would be a lie in the
--- one field an accountant would trust.
+-- stays null even for the netcash case: there was no notify callback, and
+-- inventing a trace would be a lie in the one field an accountant would trust.
 alter table squares add column if not exists payment_method text not null default 'netcash'
   check (payment_method in ('netcash', 'cash', 'complimentary'));
 alter table squares add column if not exists placed_by text;
+
+-- A hand placement records a name and nothing else about the person.
+--
+-- Everything a normal checkout collects (email, phone, shirt size, artwork) is
+-- arranged off-system for these, usually in a conversation, so requiring them
+-- here would mean typing a placeholder into four fields and storing four lies.
+-- Nullable is the honest shape: this square genuinely has no email address.
+--
+-- Nothing downstream assumed they were present: the notify route already guards
+-- on `if (rows[0].buyer_email)` before sending a receipt, and the exports write
+-- an empty cell for a null.
+alter table squares alter column buyer_email drop not null;
+alter table squares alter column buyer_phone drop not null;
+
+-- The Netcash Pay Now receipt for money taken outside this app: a payment made
+-- on a different device, or over the phone, that still needs tying to a line on
+-- the Netcash statement.
+--
+-- Deliberately not pf_payment_id. That column means "the RequestTrace Netcash
+-- sent us on the notify callback", and there was no callback for one of these.
+-- Writing an admin's typed-in figure into it would put unverified data in the
+-- one field that is otherwise proof the money moved.
+alter table squares add column if not exists netcash_receipt text;
+
+-- The claim token handed to whoever the square belongs to.
+--
+-- A hand placement is paid for before anyone knows what is going on the shirt,
+-- so the square exists with no artwork and needs a way to receive some later.
+-- The token is that way: the admin passes it on by whatever means they were
+-- already using, and it opens /claim.
+--
+-- Shared by every row of one order, so a block of four is one token and four
+-- squares rather than four things to hand over. Not secret in the strong sense,
+-- but unguessable enough that possession is a reasonable proof, which is the
+-- same standing m_payment_id already has.
+alter table squares add column if not exists claim_token text;
+alter table squares add column if not exists claim_completed_at timestamptz;
+
+create index if not exists squares_claim_token_idx
+  on squares (claim_token) where claim_token is not null;
 
 alter table squares add column if not exists content_thumb bytea;
 alter table squares add column if not exists content_meta jsonb;
