@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { query } from "../../../../lib/db";
 import { fmt, zoneLabel } from "../../../../lib/zones";
 import { RAINBOW_GRADIENT } from "../../../../lib/brand";
+import MoveSquare from "./MoveSquare";
 
 // Everything about one order on one page.
 //
@@ -158,6 +159,17 @@ export default async function OrderDetail({ params }) {
             </div>
           ))}
         </div>
+
+        {/* Below the artwork, because you decide to move a square after looking at
+            whose it is and what is on it. */}
+        <h2 style={{ fontSize: 18, fontWeight: 800, margin: "30px 0 12px" }}>Position</h2>
+        <MoveSquare
+          reference={o.m_payment_id}
+          currentPanel={o.zone_id}
+          currentCol={o.col}
+          currentRow={o.row}
+          status={o.status}
+        />
       </div>
     </div>
   );
