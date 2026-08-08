@@ -772,6 +772,39 @@ export default function EditorModal({
 
         {isDetailsStep ? (
           <div style={{ padding: "18px 22px 6px" }}>
+            {/* Shown only when they have come back from a payment that did not
+                complete. Measured reason: on the first day of real volume, 6 of
+                13 attempts were refused by the bank, 3 of those people retried
+                within two minutes and paid, and 2 gave up. The ones who gave up
+                had been told the payment failed but not what to do about it, and
+                the usual fix for a refused R2,000 online card payment is another
+                card or the bank's own online limit.
+                Deliberately not phrased as "your bank declined it": Netcash sends
+                the buyer to the same URL whether the card was refused or they
+                pressed cancel themselves, so this has to be true of both. */}
+            {ed.retryAfterFailure && (
+              <div
+                role="status"
+                style={{
+                  marginBottom: 18,
+                  padding: "13px 15px",
+                  borderRadius: 12,
+                  border: "1.5px solid #f0c26b",
+                  background: "#fdf6e7",
+                }}
+              >
+                <div style={{ fontSize: 14, fontWeight: 800, color: "#12151c", marginBottom: 5 }}>
+                  That payment did not go through
+                </div>
+                <div style={{ fontSize: 13.5, color: "#5b4a22", fontWeight: 600, lineHeight: 1.5 }}>
+                  Nothing has been charged and your square is still held. If your
+                  bank turned it down, a different card usually works, or your bank
+                  may need to approve a R{securePriceLabel} online payment first.
+                  Everything below is as you left it, so you only need to press pay
+                  again.
+                </div>
+              </div>
+            )}
             <div style={{ fontSize: 13, color: "#6b7280", fontWeight: 600, marginBottom: 18 }}>
               We use these to send your receipt, and to contact you about your square. You
               will not need to type them again on the payment page.

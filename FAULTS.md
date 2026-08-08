@@ -19,6 +19,49 @@ Rules for this file, also stated in CLAUDE.md:
 
 ## Fixed
 
+### A declined card told the buyer what happened but not what to do (mine)
+
+The first day of real volume, 8 August, put 13 payment attempts through Netcash and
+**6 came back declined**. Netcash sends only `Reason=Declined`, so there is no acquirer
+code to work from, but the shape of it is unambiguous:
+
+| buyer | declined | outcome |
+| --- | --- | --- |
+| Simon Trupp | 11:45 | retried 11:47, **paid** |
+| Ard Matthews | 12:43 | retried 12:45, **paid** |
+| Kai Gozo | 12:50 | retried 12:51, **paid** |
+| Raaziq Poole | 13:20 and 13:22 | gave up |
+| Nkosinathi Hadebe | 14:02 | gave up |
+
+Three of five recovered within about two minutes on the same integration, same amount,
+same method, which is what rules out a fault on our side and points at ordinary
+bank-side refusal of a R2,000 online card payment.
+
+The resume path was already doing most of the work: the square stays held, the artwork
+survives, and the editor reopens on the details step. What it said was "Payment did not
+go through. Your square and design are still here." That is true and it is not
+actionable, and the two people who walked away were owed the next sentence.
+
+- before: one toast, 2.8 seconds, no advice. 2 of 5 declined buyers abandoned, R4,000.
+- after: a banner on the details step that stays on screen while they act on it, saying
+  nothing has been charged, that a different card usually works, and that their bank may
+  need to approve a R2,000 online payment first.
+
+Deliberately not phrased as "your bank declined it". Netcash sends the buyer to the same
+URL whether the card was refused or they pressed cancel themselves, so the wording has
+to be true of both.
+
+The toast stays, shortened, rather than being replaced by the banner. It is the
+announcement a screen reader actually receives: `Toast` keeps a live region permanently
+in the DOM and only changes its text, whereas the banner arrives with its text already
+inside it, which assistive tech does not reliably announce.
+
+Verified by driving the real flow in Chromium at 390x844: seed the resume payload,
+return through `/?checkout=cancelled`, and confirm the banner renders, the details step
+is open, and the name field still reads "Test Buyer". Checking the string was in the
+bundle would not have proved it renders, which is the same lesson as the read-only
+fields below.
+
 ### Another app's healthy payments filled this one's error log (mine)
 
 The Pay Now service key is shared with Sonar, and `pay.hbufc.co.za` broadcasts every
@@ -371,6 +414,14 @@ this log exists.
 - **The shirt grid is not keyboard reachable.** Cells are divs under a click-catching
   overlay. "Pick one for me" is a working keyboard path to a square, so this is not a
   total block, but it is not equivalent.
+- **The toast covers a form field on a phone.** Found while photographing the decline
+  banner above. `Toast` is `position: fixed; bottom: 28`, so at 390x844 the pill lands
+  at (98,716) measuring 195x100 and covers **63.7% of the phone number input** for the
+  2.8 seconds it is up. Not specific to that message: every toast does this, and the
+  details step is simply the screen with a field there. It is aria-hidden and
+  self-clearing so nothing is unreachable, which is why it is here rather than fixed in
+  the same change. Fixing it properly means the toast rendering inside the modal, or the
+  modal reserving space for it, not nudging `bottom`.
 - **`middleware.js` is deprecated** in Next 16 in favour of `proxy`. Still works.
 
 ---
