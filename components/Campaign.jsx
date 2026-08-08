@@ -51,7 +51,19 @@ export default function Campaign() {
       return;
     }
     r.resumeEditor(saved);
-    r.pingToast("Payment did not go through. Your square and design are still here.");
+    // Kept deliberately short. The toast is a fixed pill at the bottom of the
+    // viewport, so on a 390px phone every extra line covers another form field
+    // for 2.8 seconds, and this one reopens a form. It carries the single thing
+    // somebody needs in that moment, that they have not been charged; what to do
+    // about it is the banner on the details step, which stays on screen while
+    // they act on it.
+    //
+    // It stays rather than being dropped in favour of the banner alone because
+    // this is the announcement a screen reader actually receives: Toast keeps a
+    // live region permanently in the DOM and only changes its text, whereas the
+    // banner arrives with its text already inside it, which assistive tech does
+    // not reliably announce.
+    r.pingToast("Payment did not go through, nothing was charged.");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reservations.resumable, reservations.loaded, reservations.reserved]);
 
