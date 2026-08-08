@@ -4,10 +4,31 @@ import { RAINBOW_GRADIENT } from "../../lib/brand";
 import CancelOrderButton from "./CancelOrderButton";
 import AddPlacement from "./AddPlacement";
 
-// Most recent orders to render. Abandoned checkouts accumulate a row each, so
-// this will eventually bite; the page says so explicitly rather than quietly
-// showing a subset.
-const ORDER_LIMIT = 1000;
+// Orders per page. Abandoned checkouts accumulate an order each, so this list
+// grows faster than sales do and cannot show everything.
+const PAGE_SIZE = 50;
+
+// One definition, used by both the page query and the count, because two copies
+// of a search rule drift and then the pager disagrees with the table.
+//
+// $1 is the search text. Empty matches everything.
+//
+// The phone clause is the awkward one. Buyers type their number every way there
+// is, and the same person is stored as "0723646172" one day and "+27723646172"
+// the next, so a plain ilike finds nothing when somebody searches the form they
+// know. Comparing the last nine digits of each, with the punctuation stripped,
+// makes 0723646172, +27 72 364 6172 and 3646172 all find the same person.
+const SEARCH_WHERE = `
+  $1 = ''
+  or buyer_name   ilike '%' || $1 || '%'
+  or buyer_email  ilike '%' || $1 || '%'
+  or m_payment_id ilike '%' || $1 || '%'
+  or claim_token  ilike '%' || $1 || '%'
+  or (
+    length(regexp_replace($1, '[^0-9]', '', 'g')) >= 6
+    and right(regexp_replace(buyer_phone, '[^0-9]', '', 'g'), 9)
+        like '%' || right(regexp_replace($1, '[^0-9]', '', 'g'), 9) || '%'
+  )`;
 
 // Always hits the database fresh - this page shows live order/payment
 // status, so it must never be statically cached.
@@ -50,9 +71,20 @@ function groupByBlock(rows) {
     // span matters for the cancel confirmation: a big 2x2 is a single row
     // covering four cells, so counting rows would under-report what is about
     // to be released.
-    map.get(r.block_id).cells.push({ col: r.col, row: r.row, span: r.span, content: r.content });
+    // `content_meta` rather than `content`: the artwork's type and message text
+    // without the bytes, plus the id the preview fetches the thumbnail with.
+    map.get(r.block_id).cells.push({
+      id: r.id,
+      col: r.col,
+      row: r.row,
+      span: r.span,
+      content: r.content_meta,
+      hasArt: r.has_art,
+    });
   });
-  return [...map.values()].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  // Already ordered by the query, which is the only thing that knows the paging
+  // order. Re-sorting here would fight it.
+  return [...map.values()];
 }
 
 function Stat({ label, value, color, accent }) {
@@ -78,16 +110,27 @@ function Stat({ label, value, color, accent }) {
   );
 }
 
-function ContentPreview({ content }) {
+// `content` is the artwork minus the bytes (content_meta), plus the square's id
+// so the picture can be fetched rather than inlined.
+//
+// This used to render <img src={content.src}> straight from the database, which
+// meant every print-resolution base64 data URL on the page to draw a 32px box:
+// 6.66 MB of HTML for 37 squares, and it scaled with sales. The thumbnail
+// endpoint serves a ~96px WebP the browser caches for a year, so the same
+// preview now costs a few hundred bytes once.
+function ContentPreview({ content, squareId, hasArt }) {
   if (!content) return <span style={{ color: "#4b5563" }}>-</span>;
   if (content.type === "image") {
-    return (
+    return hasArt ? (
       <img
-        src={content.src}
+        src={`/api/square/${squareId}/thumb`}
         alt="Logo"
         title="Logo"
+        loading="lazy"
         style={{ width: 32, height: 32, objectFit: "contain", background: "#fff", borderRadius: 6, border: "1px solid #24405f" }}
       />
+    ) : (
+      <span style={{ color: "#4b5563" }} title="Artwork present but no thumbnail">image</span>
     );
   }
   if (content.type === "text") {
@@ -152,33 +195,80 @@ const th = {
 };
 const td = { padding: "13px 16px", verticalAlign: "top" };
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }) {
+  const sp = await searchParams;
+  const q = typeof sp?.q === "string" ? sp.q.trim().slice(0, 80) : "";
+  const page = Math.max(1, Number.parseInt(sp?.page, 10) || 1);
+  const offset = (page - 1) * PAGE_SIZE;
+
   let orders = [];
-  let totalOrders = 0;
+  let matchingOrders = 0;
+  let stats = { orders: 0, paid: 0, pending: 0, conflict: 0, raised: 0 };
   let loadError = "";
 
   try {
-    // Limit by order, not by row: a block of 4 is four rows, so a plain row
-    // limit would cut a block in half and show a partial order.
-    const [{ rows: orderRows }, { rows: countRows }] = await Promise.all([
+    // Three queries rather than one, because they answer three different
+    // questions and only the middle one is affected by the search box.
+    //
+    // The stats are deliberately computed in SQL over every row, not summed from
+    // the page. They used to be derived from whatever had been loaded, which was
+    // honest only while the page held every order, and would quietly start
+    // reporting the current page's total the moment this was paginated.
+    const [{ rows: statRows }, { rows: pageRows }, { rows: countRows }] = await Promise.all([
       query(
-        `with recent as (
+        `select
+           (select count(distinct block_id) from squares)::int as orders,
+           (select count(distinct block_id) from squares where status='paid')::int as paid,
+           (select count(distinct block_id) from squares where status='pending')::int as pending,
+           (select count(distinct block_id) from squares where status='conflict')::int as conflict,
+           coalesce((select sum(amt) from
+             (select distinct block_id, order_amount as amt from squares where status='paid') t
+           ), 0) as raised`
+      ),
+      query(
+        `with matched as (
            select block_id, max(created_at) as ordered_at
              from squares
+            where ${SEARCH_WHERE}
             group by block_id
             order by max(created_at) desc
-            limit $1
+            limit $2 offset $3
          )
-         select s.*
+         -- Every column the list renders, and none of the ones it does not.
+         -- The content column is deliberately absent: it holds the print
+         -- resolution artwork as a base64 data URL, and selecting it put 6.66 MB
+         -- on the wire to draw 32px previews. content_meta is the same thing
+         -- with the bytes taken out, and the preview loads the cached thumbnail.
+         select s.id, s.block_id, s.m_payment_id, s.buyer_name, s.buyer_email,
+                s.buyer_phone, s.shirt_size, s.buyer_address, s.ship_overseas,
+                s.payment_method, s.placed_by, s.order_amount, s.status,
+                s.created_at, s.paid_at, s.zone_id, s.col, s."row", s.span,
+                s.content_meta, (s.content_thumb is not null) as has_art,
+                m.ordered_at
            from squares s
-           join recent r on r.block_id = s.block_id
-          order by r.ordered_at desc`,
-        [ORDER_LIMIT]
+           join matched m on m.block_id = s.block_id
+          order by m.ordered_at desc, s."row", s.col`,
+        [q, PAGE_SIZE, offset]
       ),
-      query(`select count(distinct block_id)::int as total from squares`),
+      query(
+        `select count(*)::int as total from (
+           select block_id from squares
+            where ${SEARCH_WHERE}
+            group by block_id
+         ) t`,
+        [q]
+      ),
     ]);
-    orders = groupByBlock(orderRows);
-    totalOrders = countRows[0]?.total ?? orders.length;
+    orders = groupByBlock(pageRows);
+    matchingOrders = countRows[0]?.total ?? orders.length;
+    const s = statRows[0] || {};
+    stats = {
+      orders: s.orders ?? 0,
+      paid: s.paid ?? 0,
+      pending: s.pending ?? 0,
+      conflict: s.conflict ?? 0,
+      raised: Number(s.raised) || 0,
+    };
   } catch (e) {
     // This page is behind Basic Auth, so the real error is more use here than
     // a generic one.
@@ -186,10 +276,7 @@ export default async function AdminPage() {
     loadError = e.message;
   }
 
-  const paidOrders = orders.filter((o) => o.status === "paid");
-  const totalRaised = paidOrders.reduce((sum, o) => sum + o.amount, 0);
-  const pendingCount = orders.filter((o) => o.status === "pending").length;
-  const conflictCount = orders.filter((o) => o.status === "conflict").length;
+  const totalPages = Math.max(1, Math.ceil(matchingOrders / PAGE_SIZE));
 
   return (
     <div style={{ minHeight: "100vh", padding: "40px 24px 60px" }}>
@@ -256,30 +343,72 @@ export default async function AdminPage() {
           </div>
         )}
 
-        <div style={{ display: "flex", gap: 14, marginBottom: 28, flexWrap: "wrap" }}>
-          <Stat label="Orders" value={orders.length} accent="#5f4ea1" />
-          <Stat label="Paid" value={paidOrders.length} color="#8bf0b0" accent="#2cae4a" />
-          <Stat label="Pending" value={pendingCount} color="#ffd27a" accent="#f6ea0c" />
-          {conflictCount > 0 && <Stat label="Conflicts" value={conflictCount} color="#fdba74" accent="#f37e21" />}
-          <Stat label="Raised" value={"R" + fmt(totalRaised)} color="#a5c8ff" accent="#117ec2" />
+        {/* These count every order in the database, not the page, so they stay
+            true whatever is being searched for or paged through. */}
+        <div style={{ display: "flex", gap: 14, marginBottom: 22, flexWrap: "wrap" }}>
+          <Stat label="Orders" value={stats.orders} accent="#5f4ea1" />
+          <Stat label="Paid" value={stats.paid} color="#8bf0b0" accent="#2cae4a" />
+          <Stat label="Pending" value={stats.pending} color="#ffd27a" accent="#f6ea0c" />
+          {stats.conflict > 0 && <Stat label="Conflicts" value={stats.conflict} color="#fdba74" accent="#f37e21" />}
+          <Stat label="Raised" value={"R" + fmt(stats.raised)} color="#a5c8ff" accent="#117ec2" />
         </div>
 
-        {totalOrders > orders.length && (
-          <div
+        {/* A plain GET form, so a search is a URL that can be bookmarked, shared
+            with whoever is chasing that buyer, and reloaded without re-typing. */}
+        <form
+          method="GET"
+          style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap", alignItems: "center" }}
+        >
+          <input
+            type="search"
+            name="q"
+            defaultValue={q}
+            placeholder="Search name, email, phone, reference or claim code"
+            aria-label="Search orders"
             style={{
-              background: "rgba(255,210,122,.08)",
-              border: "1px solid #6b5320",
-              borderRadius: 12,
-              padding: "12px 16px",
-              marginBottom: 20,
-              color: "#ffd27a",
-              fontSize: 13.5,
+              flex: "1 1 320px",
+              fontFamily: "inherit",
+              fontSize: 14,
+              padding: "11px 14px",
+              borderRadius: 10,
+              border: "1.5px solid #24405f",
+              background: "#081120",
+              color: "#eef1f6",
+            }}
+          />
+          <button
+            type="submit"
+            style={{
+              cursor: "pointer",
+              fontFamily: "inherit",
+              fontWeight: 800,
+              fontSize: 14,
+              color: "#0a0a0c",
+              background: "#a5c8ff",
+              padding: "11px 20px",
+              borderRadius: 999,
+              border: "none",
             }}
           >
-            Showing the {orders.length} most recent of {totalOrders} orders. The
-            stats above count only what is shown.
-          </div>
-        )}
+            Search
+          </button>
+          {q && (
+            <a
+              href="/admin"
+              style={{ fontSize: 13.5, fontWeight: 700, color: "#8b8b93", textDecoration: "none" }}
+            >
+              Clear
+            </a>
+          )}
+        </form>
+
+        <div style={{ fontSize: 13, color: "#8b8b93", marginBottom: 14, fontWeight: 600 }}>
+          {matchingOrders === 0
+            ? q
+              ? `Nothing matches "${q}".`
+              : "No orders yet."
+            : `${q ? `${matchingOrders} matching ` : `${matchingOrders} `}order${matchingOrders === 1 ? "" : "s"}, showing ${orders.length} on page ${page} of ${totalPages}.`}
+        </div>
 
         <div className="rb-admin-scroll" style={{ overflowX: "auto", border: "1px solid #24405f", borderRadius: 16, background: "#0d1a30" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, minWidth: 1160 }}>
@@ -325,7 +454,7 @@ export default async function AdminPage() {
                   <td style={td}>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", maxWidth: 220 }}>
                       {o.cells.map((c, i) => (
-                        <ContentPreview key={i} content={c.content} />
+                        <ContentPreview key={i} content={c.content} squareId={c.id} hasArt={c.hasArt} />
                       ))}
                     </div>
                   </td>
@@ -359,15 +488,72 @@ export default async function AdminPage() {
               {orders.length === 0 && !loadError && (
                 <tr>
                   <td colSpan={11} style={{ padding: "48px 16px", textAlign: "center", color: "#8b8b93" }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>No orders yet</div>
-                    <div style={{ fontSize: 13 }}>Checkouts will show up here the moment someone starts one.</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>
+                      {q ? "Nothing matches that search" : "No orders yet"}
+                    </div>
+                    <div style={{ fontSize: 13 }}>
+                      {q
+                        ? "Try part of a name, an email, a phone number or a reference."
+                        : "Checkouts will show up here the moment someone starts one."}
+                    </div>
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+
+        {/* Plain links, so paging works with the keyboard, opens in a new tab and
+            survives a reload, which a button posting state would not. */}
+        {/* Also shown when the page number is past the end, which only happens if
+            somebody edits the URL, so there is always a way back rather than an
+            empty table and no navigation. */}
+        {(totalPages > 1 || page > 1) && (
+          <nav
+            aria-label="Order pages"
+            style={{ display: "flex", gap: 12, alignItems: "center", justifyContent: "center", marginTop: 20 }}
+          >
+            <PageLink q={q} page={page - 1} disabled={page <= 1}>
+              &larr; Newer
+            </PageLink>
+            <span style={{ fontSize: 13.5, color: "#8b8b93", fontWeight: 700 }}>
+              Page {page} of {totalPages}
+            </span>
+            <PageLink q={q} page={page + 1} disabled={page >= totalPages}>
+              Older &rarr;
+            </PageLink>
+          </nav>
+        )}
       </div>
     </div>
+  );
+}
+
+function PageLink({ q, page, disabled, children }) {
+  const style = {
+    fontSize: 13.5,
+    fontWeight: 800,
+    padding: "9px 16px",
+    borderRadius: 999,
+    border: "1.5px solid #24405f",
+    textDecoration: "none",
+    color: disabled ? "#3d4756" : "#cfd0d6",
+    pointerEvents: disabled ? "none" : "auto",
+  };
+  if (disabled) {
+    return (
+      <span aria-disabled="true" style={style}>
+        {children}
+      </span>
+    );
+  }
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  if (page > 1) params.set("page", String(page));
+  const qs = params.toString();
+  return (
+    <a href={`/admin${qs ? `?${qs}` : ""}`} style={style}>
+      {children}
+    </a>
   );
 }
